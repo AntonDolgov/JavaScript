@@ -1,55 +1,34 @@
 /*
-Вам попал в руки код объекта User, который 
-хранит имя и фамилию в свойстве this.fullName:
+Добавить в конструктор Article:
+
+Подсчёт общего количества созданных объектов.
+Запоминание даты последнего созданного объекта.
+Используйте для этого статические свойства.
+
+Пусть вызов Article.showStats() выводит то и другое.
+
+Использование:
 */
 
-function User(fullName) {
-  this.fullName = fullName;
-
-  Object.defineProperties(this, {
-  	firstName: {
-  		get: function() {
-  			return this.fullName.split(" ")[0];
-  		},
-  		set: function (value) {
-  			this.fullName = value+ ' ' + this.lastName;
-  		}
-  	},
-
-  	lastName: {
-  		get: function () {
-  			return this.fullName.split(" ")[1];
-  		},
-  		set: function(value) {
-  			this.fullName = this.firstName + ' ' + value;
-  		}
-  	}
-  });
+function Article() {
+  this.created = new Date();
+  if (Article.count == undefined) {
+  	Article.count = 0;
+  }
+  
+  Article.count++;
+  Article.date = this.created;
 }
-/*
 
-/*
-Имя и фамилия всегда разделяются пробелом.
+Article.showStats = function() {
+	alert('Всего:'+ this.count + ', Последняя: ' + this.date);
+}
 
-Сделайте, чтобы были доступны свойства firstName 
-и lastName, причём не только на чтение, но и на 
-запись, вот так:
-*/
+new Article();
+new Article();
 
-var vasya = new User("Василий Попкин");
+Article.showStats(); // Всего: 2, Последняя: (дата)
 
-// чтение firstName/lastName
-alert( vasya.firstName ); // Василий
-alert( vasya.lastName ); // Попкин
+new Article();
 
-// запись в lastName
-vasya.firstName = 'Коля';
-vasya.lastName = 'Сидоров';
-
-alert( vasya.fullName ); // Василий Сидоров
-
-/*
-Важно: в этой задаче fullName должно остаться 
-свойством, а firstName/lastName – реализованы 
-через get/set. Лишнее дублирование здесь ни к чему.
-*/
+Article.showStats(); // Всего: 3, Последняя: (дата)
