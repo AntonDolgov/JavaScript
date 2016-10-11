@@ -1,81 +1,55 @@
 /*
-Напишите конструктор Calculator, который создаёт расширяемые 
-объекты-калькуляторы.
-
-Эта задача состоит из двух частей, которые можно решать 
-одна за другой.
-
-1. 
-Первый шаг задачи: вызов calculate(str) принимает строку, 
-например «1 + 2», с жёстко заданным форматом «ЧИСЛО операция 
-ЧИСЛО» (по одному пробелу вокруг операции), и возвращает результат. 
-Понимает плюс + и минус -.
-
-Пример использования:
+Вам попал в руки код объекта User, который 
+хранит имя и фамилию в свойстве this.fullName:
 */
 
-function Calculator() {
-	var methods = {
-		"-": function(a,b) {
-			return a - b;
-		},
-		"+": function(a,b) {
-			return a + b;
-		}
-	};
+function User(fullName) {
+  this.fullName = fullName;
 
-	this.calculate = function (str) {
-		var array = str.split(" "),
-		a = +array[0],
-		operator = array[1],
-		b = +array[2];
+  Object.defineProperties(this, {
+  	firstName: {
+  		get: function() {
+  			return this.fullName.split(" ")[0];
+  		},
+  		set: function (value) {
+  			this.fullName = value+ ' ' + this.lastName;
+  		}
+  	},
 
-		if (!methods[operator] || isNaN(a) || isNaN(b)) {
-      return NaN;
-    }
-
-		return methods[operator](+a, +b);
-	};
-
-	this.addMethod = function (name, func) {
-		methods[name] = func;
-	};
+  	lastName: {
+  		get: function () {
+  			return this.fullName.split(" ")[1];
+  		},
+  		set: function(value) {
+  			this.fullName = this.firstName + ' ' + value;
+  		}
+  	}
+  });
 }
-
-var calc = new Calculator;
-
-alert( calc.calculate("3 + 7") ); // 10
+/*
 
 /*
-Второй шаг – добавить калькулятору метод addMethod(name, func), 
-который учит калькулятор новой операции. Он получает имя операции 
-name и функцию от двух аргументов func(a,b), которая 
-должна её реализовывать.
+Имя и фамилия всегда разделяются пробелом.
 
-Например, добавим операции умножить *, 
-поделить / и возвести в степень **:
+Сделайте, чтобы были доступны свойства firstName 
+и lastName, причём не только на чтение, но и на 
+запись, вот так:
 */
 
-var powerCalc = new Calculator;
-powerCalc.addMethod("*", function(a, b) {
-  return a * b;
-});
-powerCalc.addMethod("/", function(a, b) {
-  return a / b;
-});
-powerCalc.addMethod("**", function(a, b) {
-  return Math.pow(a, b);
-});
+var vasya = new User("Василий Попкин");
 
-var result = powerCalc.calculate("2 ** 3");
-var result2 = powerCalc.calculate("2 * 3");
-alert( result ); // 8
-alert( result2 ); // 6
+// чтение firstName/lastName
+alert( vasya.firstName ); // Василий
+alert( vasya.lastName ); // Попкин
+
+// запись в lastName
+vasya.firstName = 'Коля';
+vasya.lastName = 'Сидоров';
+
+alert( vasya.fullName ); // Василий Сидоров
 
 /*
-Поддержка скобок и сложных математических выражений 
-в этой задаче не требуется.
-Числа и операции могут состоять из нескольких символов. 
-Между ними ровно один пробел.
-Предусмотрите обработку ошибок. Какая она должна быть – решите сами.
+Важно: в этой задаче fullName должно остаться 
+свойством, а firstName/lastName – реализованы 
+через get/set. Лишнее дублирование здесь ни к чему.
 */
