@@ -1,65 +1,52 @@
-"use strict";
-
-function ask(question, answer, ok, fail) {
-  var result = prompt(question, '');
-  if (result.toLowerCase() == answer.toLowerCase()) ok();
-  else fail();
-}
-
-var user = {
-  login: 'Василий',
-  password: '12345',
-
-  // метод для вызова из ask
-  loginDone: function(result) {
-    alert( this.login + (result ? ' вошёл в сайт' : ' ошибка входа') );
-  },
-
-  checkPassword: function() {
-    ask("Ваш пароль?", this.password, this.loginDone.bind(this, true), this.loginDone.bind(this, false) );
-  }
-};
-
-var vasya = user;
-user = null;
-vasya.checkPassword();
-
-
-
 /*
-Второй вариант решения (через анонимные функции)
+Напишите функцию formatDate(date), которая возвращает дату в формате dd.mm.yy.
 
-"use strict";
+Ее первый аргумент должен содержать дату в одном из видов:
 
-function ask(question, answer, ok, fail) {
-  var result = prompt(question, '');
-  if (result.toLowerCase() == answer.toLowerCase()) ok();
-  else fail();
-}
+Как объект Date.
+Как строку, например yyyy-mm-dd или другую в стандартном формате даты.
+Как число секунд с 01.01.1970.
+Как массив [гггг, мм, дд], месяц начинается с нуля
+Для этого вам понадобится определить тип данных аргумента и, при необходимости, преобразовать входные данные в нужный формат.
 
-var user = {
-  login: 'Василий',
-  password: '12345',
-
-  // метод для вызова из ask
-  loginDone: function(result) {
-    alert( this.login + (result ? ' вошёл в сайт' : ' ошибка входа') );
-  },
-
-  checkPassword: function() {
-    var self = this;
-    ask("Ваш пароль?", this.password,
-      function() {
-        self.loginDone(true);
-      },
-      function() {
-        self.loginDone(false);
-      }
-    );
-  }
-};
-
-var vasya = user;
-user = null;
-vasya.checkPassword();
+Пример работы:
 */
+
+function formatDate(date) {
+  if (typeof date == 'number') {
+        // перевести секунды в миллисекунды и преобразовать к Date
+        date = new Date(date * 1000);
+      } else if (typeof date == 'string') {
+        // строка в стандартном формате автоматически будет разобрана в дату
+        date = new Date(date); 
+      } else if (Array.isArray(date)) { 
+        date = new Date(date[0], date[1], date[2]);
+      }
+      // преобразования для поддержки полиморфизма завершены, 
+      // теперь мы работаем с датой (форматируем её)
+
+      return date.toLocaleString("ru", {day: '2-digit', month: '2-digit', year: '2-digit'});
+    }
+
+alert( formatDate('2011-10-02') ); // 02.10.11
+alert( formatDate(1234567890) ); // 14.02.09
+alert( formatDate([2014, 0, 1]) ); // 01.01.14
+alert( formatDate(new Date(2014, 0, 1)) ); // 01.01.14
+
+
+      /*
+      // можно и вручную, если лень добавлять в старый IE поддержку локализации
+      var day = date.getDate();
+      if (day < 10) day = '0' + day;
+    
+      var month = date.getMonth() + 1;
+      if (month < 10) month = '0' + month;
+    
+      // взять 2 последние цифры года
+      var year = date.getFullYear() % 100;
+      if (year < 10) year = '0' + year;
+    
+      var formattedDate = day + '.' + month + '.' + year;
+      
+      return formattedDate;
+      */
