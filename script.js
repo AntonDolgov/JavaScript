@@ -1,51 +1,65 @@
-/*
-Напишите функцию applyAll(func, arg1, arg2...), 
-которая получает функцию func и произвольное 
-количество аргументов.
+"use strict";
 
-Она должна вызвать func(arg1, arg2...), то есть 
-передать в func все аргументы, начиная со второго, 
-и возвратить результат.
-*/
-
-function applyAll(arr) {
-	/* конкретно в данном задании контекст метода 
-	apply не нужен. "this" используется на всякий 
-	случай. Специально в самом низу добавил этот случай
-	в качестве примера
-	*/
-	return arr.apply(this, [].slice.call(arguments,1));
+function ask(question, answer, ok, fail) {
+  var result = prompt(question, '');
+  if (result.toLowerCase() == answer.toLowerCase()) ok();
+  else fail();
 }
 
-// Применить Math.max к аргументам 2, -2, 3
-alert( applyAll(Math.max, 2, -2, 3) ); // 3
+var user = {
+  login: 'Василий',
+  password: '12345',
 
-// Применить Math.min к аргументам 2, -2, 3
-alert( applyAll(Math.min, 2, -2, 3) ); // -2
+  // метод для вызова из ask
+  loginDone: function(result) {
+    alert( this.login + (result ? ' вошёл в сайт' : ' ошибка входа') );
+  },
 
-
-function sum() { // суммирует аргументы 
-  return [].reduce.call(arguments, function(a, b) {
-    return a + b;
-  });
-}
-
-function mul() { // перемножает аргументы
-  return [].reduce.call(arguments, function(a, b) {
-    return a * b;
-  });
-}
-
-alert( applyAll(sum, 1, 2, 3) ); // sum(1, 2, 3) = 6
-alert( applyAll(mul, 2, 3, 4) ); // mul(2, 3, 4) = 24
-
-//в качестве примера, когда "this" пригодится:
-var obj = {
-    i: 10,
-    f: function (arg) {
-        alert(this.i + arg)
-    }
+  checkPassword: function() {
+    ask("Ваш пароль?", this.password, this.loginDone.bind(this, true), this.loginDone.bind(this, false) );
+  }
 };
 
-obj.applyAll = applyAll; // "одолжили" метод
-obj.applyAll(obj.f, 10); // 20
+var vasya = user;
+user = null;
+vasya.checkPassword();
+
+
+
+/*
+Второй вариант решения (через анонимные функции)
+
+"use strict";
+
+function ask(question, answer, ok, fail) {
+  var result = prompt(question, '');
+  if (result.toLowerCase() == answer.toLowerCase()) ok();
+  else fail();
+}
+
+var user = {
+  login: 'Василий',
+  password: '12345',
+
+  // метод для вызова из ask
+  loginDone: function(result) {
+    alert( this.login + (result ? ' вошёл в сайт' : ' ошибка входа') );
+  },
+
+  checkPassword: function() {
+    var self = this;
+    ask("Ваш пароль?", this.password,
+      function() {
+        self.loginDone(true);
+      },
+      function() {
+        self.loginDone(false);
+      }
+    );
+  }
+};
+
+var vasya = user;
+user = null;
+vasya.checkPassword();
+*/
