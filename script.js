@@ -1,10 +1,12 @@
 /*
-Обычно когда кофе готов, мы хотим что-то сделать, например выпить его.
-Сейчас при готовности срабатывает функция onReady, но она жёстко задана в коде:
+Из внешнего кода мы хотели бы иметь возможность понять – запущена кофеварка или нет.
+Для этого добавьте кофеварке публичный метод isRunning(), который 
+будет возвращать true, если она запущена и false, если нет.
 */
 
 function CoffeeMachine(power, capacity) {
   var waterAmount = 0;
+  var timerId;
 
   var WATER_HEAT_CAPACITY = 4200;
 
@@ -28,53 +30,33 @@ function CoffeeMachine(power, capacity) {
   this.setOnReady = function(func) {
     onReady = function () {
       return func();
-    }
-  }
+    };
+  };
 
   this.run = function() {
-    setTimeout(onReady, getTimeToBoil());
+    timerId = setTimeout(function() {
+      timerId = null;
+      onReady();
+      }, getTimeToBoil());
+  };
+
+  this.isRunning = function() {
+    return !!timerId;
   };
 
 }
 
-//Создайте сеттер setOnReady, чтобы код снаружи мог назначить свой onReady, вот так:
+//Нужно, чтобы такой код работал:
 
-var coffeeMachine = new CoffeeMachine(50000, 500);
-coffeeMachine.setWaterAmount(150);
+var coffeeMachine = new CoffeeMachine(20000, 500);
+coffeeMachine.setWaterAmount(100);
 
-coffeeMachine.setOnReady(function() {
-  var amount = coffeeMachine.getWaterAmount();
-  alert( 'Готов кофе: ' + amount + 'мл' ); // Кофе готов: 150 мл
-});
+alert( 'До: ' + coffeeMachine.isRunning() ); // До: false
 
 coffeeMachine.run();
+alert( 'В процессе: ' + coffeeMachine.isRunning() ); // В процессе: true
 
 coffeeMachine.setOnReady(function() {
-  var amount = coffeeMachine.getWaterAmount();
-  alert( 'Готов кофе: ' + amount + 'мsdfsdfл' ); // Кофе готов: 150 мл
+  alert( "После: " + coffeeMachine.isRunning() ); // После: false
 });
 
-coffeeMachine.run();
-
-/*
-P.S. Значение onReady по умолчанию должно быть таким же, как и раньше.
-
-P.P.S. Постарайтесь сделать так, чтобы setOnReady можно было вызвать не 
-только до, но и после запуска кофеварки, то есть чтобы функцию onReady 
-можно было изменить в любой момент до её срабатывания.
-
-!!! Мой метод решения оказался даже более читабельным (на мой взгляд),
-чем решение, предложенное авторами. Я изменил код в одной строчке, в то
-время как им пришлось изменять две функции. Их решение:
-
-this.setOnReady = function(newOnReady) {
-    onReady = newOnReady;
-  };
-
-  this.run = function() {
-    setTimeout(function() {
-      onReady();
-    }, getTimeToBoil());
-  };
-
-*/
