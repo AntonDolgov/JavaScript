@@ -1,62 +1,27 @@
 /*
-Из внешнего кода мы хотели бы иметь возможность понять – запущена кофеварка или нет.
-Для этого добавьте кофеварке публичный метод isRunning(), который 
-будет возвращать true, если она запущена и false, если нет.
+Создайте ошибку FormatError, которая будет наследовать от встроенного класса SyntaxError.
+Синтаксис для её создания – такой же, как обычно:
 */
 
-function CoffeeMachine(power, capacity) {
-  var waterAmount = 0;
-  var timerId;
+function FormatError(message) {
+  this.name = "FormatError";
+  this.message = message;
 
-  var WATER_HEAT_CAPACITY = 4200;
-
-  function getTimeToBoil() {
-    return waterAmount * WATER_HEAT_CAPACITY * 80 / power;
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, this.constructor);
+  } else {
+    this.stack = (new Error()).stack;
   }
-
-  this.setWaterAmount = function(amount) {
-    // ... проверки пропущены для краткости
-    waterAmount = amount;
-  };
-
-  this.getWaterAmount = function(amount) {
-    return waterAmount;
-  };
-
-  function onReady() {
-      alert( 'Кофе готов!' );
-  }
-
-  this.setOnReady = function(func) {
-    onReady = function () {
-      return func();
-    };
-  };
-
-  this.run = function() {
-    timerId = setTimeout(function() {
-      timerId = null;
-      onReady();
-      }, getTimeToBoil());
-  };
-
-  this.isRunning = function() {
-    return !!timerId;
-  };
 
 }
 
-//Нужно, чтобы такой код работал:
+FormatError.prototype = Object.create(SyntaxError.prototype);
+FormatError.prototype.constructor = FormatError;
 
-var coffeeMachine = new CoffeeMachine(20000, 500);
-coffeeMachine.setWaterAmount(100);
+var err = new FormatError("ошибка форматирования");
 
-alert( 'До: ' + coffeeMachine.isRunning() ); // До: false
+alert( err.message ); // ошибка форматирования
+alert( err.name ); // FormatError
+alert( err.stack ); // стек на момент генерации ошибки
 
-coffeeMachine.run();
-alert( 'В процессе: ' + coffeeMachine.isRunning() ); // В процессе: true
-
-coffeeMachine.setOnReady(function() {
-  alert( "После: " + coffeeMachine.isRunning() ); // После: false
-});
-
+alert( err instanceof SyntaxError ); // true
