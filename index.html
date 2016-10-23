@@ -2,78 +2,83 @@
 <html>
 
 <head>
+  <style>
+    table {
+      border-collapse: collapse;
+    }
+
+    td,
+    th {
+      border: 1px solid black;
+      padding: 3px;
+      text-align: center;
+    }
+
+    th {
+      font-weight: bold;
+      background-color: #E6E6E6;
+    }
+  </style>
   <meta charset="utf-8">
-  <script src="script.js"></script>
 </head>
 
 <body>
 
-<!-- 
-Напишите функцию, которая создаёт вложенный список UL/LI (дерево) из объекта.
 
-Выберите один из двух способов решения этой задачи:
+  <div id="calendar"></div>
 
-Создать строку, а затем присвоить через container.innerHTML.
-Создавать узлы через методы DOM.
-Если получится – сделайте оба.
+  <script>
+    function createCalendar(id, year, month) {
+      var elem = document.getElementById(id);
 
-P.S. Желательно, чтобы в дереве не было лишних элементов, в частности – пустых <ul></ul> на нижнем уровне.-->
- <div id="container"></div>
+      var mon = month - 1; // месяцы в JS идут от 0 до 11, а не от 1 до 12
+      var d = new Date(year, mon);
 
-<script>
+      var table = '<table><tr><th>пн</th><th>вт</th><th>ср</th><th>чт</th><th>пт</th><th>сб</th><th>вс</th></tr><tr>';
 
-function createTree(container, data) {
-	container.appendChild(createTreeDom(data));
-}
+      // заполнить первый ряд от понедельника
+      // и до дня, с которого начинается месяц
+      // * * * | 1  2  3  4
+      for (var i = 0; i < getDay(d); i++) {
+        table += '<td></td>';
+      }
 
-function createTreeDom(obj) {
-	if(isObjectEmpty(obj)) return;
+      // ячейки календаря с датами
+      while (d.getMonth() == mon) {
+        table += '<td>' + d.getDate() + '</td>';
 
-	var ul = document.createElement('ul');
-	
-	for(var key in obj) {
-		var li = document.createElement('li');
-		li.innerHTML = key;
+        if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
+          table += '</tr><tr>';
+        }
 
-		var childrenUI = createTreeDom(obj[key]);
-		if(childrenUI) {
-			li.appendChild(childrenUI);
-		}
-		ul.appendChild(li);
-	}
+        d.setDate(d.getDate() + 1);
+      }
 
-	return ul;
-}
+      // добить таблицу пустыми ячейками, если нужно
+      if (getDay(d) != 0) {
+        for (var i = getDay(d); i < 7; i++) {
+          table += '<td></td>';
+        }
+      }
 
-function isObjectEmpty(obj) {
-	for (var key in obj) {
-		return false;
-	}
-	return true;
-}
+      // закрыть таблицу
+      table += '</tr></table>';
 
-var data = {
-  "Рыбы": {
-    "Форель": {},
-    "Щука": {}
-  },
-
-  "Деревья": {
-    "Хвойные": {
-      "Лиственница": {},
-      "Ель": {}
-    },
-    "Цветковые": {
-      "Берёза": {},
-      "Тополь": {}
+      // только одно присваивание innerHTML
+      elem.innerHTML = table;
     }
-  }
-};
 
-var container = document.getElementById('container');
-createTree(container, data); // создаёт
+    function getDay(date) { // получить номер дня недели, от 0(пн) до 6(вс)
+      var day = date.getDay();
+      if (day == 0) day = 7;
+      return day - 1;
+    }
 
-</script>
+
+
+    createCalendar("calendar", 2012, 9)
+  </script>
+
 </body>
 
 </html>
