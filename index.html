@@ -3,47 +3,35 @@
 
 <head>
   <style>
-	  .hours {
-	  	color: red;
-	  }
-	  .min {
-	  	color: green;
-	  }
-	  .sec {
-	  	color: blue;
-	  }
+    #field {
+      width: 200px;
+      border: 10px groove black;
+      background-color: #00FF00;
+      position: relative;
+    }
+
+    #ball {
+      position: absolute;
+    }
   </style>
-  <meta charset="utf-8">
 </head>
 
 <body>
 
-  <script>
-  var body = document.getElementsByTagName('body')[0];
-  body.innerHTML = '<span class="hours"></span>:<span class="min"></span>:<span class="sec"></span>';
+
+  <div id="field">
+    <img src="https://js.cx/clipart/ball.svg" width="40" height="40" id="ball"> . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  </div>
   
-  function update() {
-  	var hours = body.querySelector('.hours'), 
-  			min = body.querySelector('.min'), 
-  			sec = body.querySelector('.sec');
-
-  	var date = new Date();
-  	hours.innerHTML = (date.getHours() < 10) ? '0' + date.getHours() : date.getHours();
-  	min.innerHTML = (date.getMinutes() < 10) ? '0' + date.getMinutes() : date.getMinutes();
-  	sec.innerHTML = (date.getSeconds() < 10) ? '0' + date.getSeconds() : date.getSeconds();
-  }
-
-  var timerId;
-  function clockStart() {
-  	timerId = setInterval(update, 1000);
-		update();
-  }
-  function clockStop() {
-  	clearInterval(timerId);
-  	timerId = null;
-  }
-
-  clockStart();
+  <script>
+    var ball = document.getElementById('ball');
+    var field = document.getElementById('field');
+    
+    ball.style.position = 'absolute';
+    ball.style.left = Math.round(field.clientWidth / 2 - ball.offsetWidth / 2) + 'px';
+    ball.style.top = Math.round(field.clientHeight / 2 - ball.offsetHeight / 2) + 'px';
+    console.log(ball.offsetLeft);
   </script>
 
 </body>
