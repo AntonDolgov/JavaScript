@@ -1,100 +1,81 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-Сделайте так, что при клике по полю мяч перемещался на место клика.
-Требования:
-1. Мяч после перелёта должен становиться центром ровно под курсор мыши, если это возможно без вылета за край поля.
-2. CSS-анимация не обязательна, но желательна.
-3. Мяч должен останавливаться у границ поля, ни в коем случае не вылетать за них.
-4. При прокрутке страницы с полем ничего не должно ломаться.
-Замечания:
-
-Код не должен зависеть от конкретных размеров мяча и поля.
-Вам пригодятся свойства event.clientX/event.clientY
+		Дан список сообщений. Добавьте каждому сообщению кнопку для его удаления.
+		Используйте делегирование событий. Один обработчик для всего.
  -->
 <head>
   <meta charset="utf-8">
   <style>
-    #field {
-      width: 200px;
-      height: 150px;
-      border: 10px groove black;
-      background-color: #00FF00;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
+    body {
+      margin: 10px auto;
+      width: 470px;
     }
-
-    #ball {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 40px;
-      height: 40px;
-      -webkit-transition: all .3s ease-in-out;
-      -moz-transition: all .3s ease-in-out;
-      -o-transition: all .3s ease-in-out;
-      -ms-transition: all .3s ease-in-out;
-      transition: all .3s ease-in-out;
+    
+    h3 {
+      float: left;
+      width: 94%;
+      margin: 0;
+      padding-bottom: .3em;
+      font-size: 1.1em;
+    }
+    
+    p {
+      clear: both;
+      margin: 0;
+      padding: 0 0 .5em;
+    }
+    
+    .pane {
+      background: #edf5e1;
+      padding: 10px 20px 10px;
+      border-top: solid 2px #c4df9b;
+    }
+    
+    .remove-button {
+      float: right;
+      font-size: 110%;
+      color: darkred;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
     }
   </style>
 </head>
 
-<body style="height:2000px">
+<body>
 
-  Кликните на любое место поля, чтобы мяч перелетел туда.
-  <br>
-
-
-  <div id="field">
-    <img src="https://js.cx/clipart/ball.svg" id="ball"> . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  <div>
+    <div class="pane">
+      <h3>Лошадь</h3>
+      <button class="remove-button">[x]</button>
+      <p>Домашняя лошадь — животное семейства непарнокопытных, одомашненный и единственный сохранившийся подвид дикой лошади, вымершей в дикой природе, за исключением небольшой популяции лошади Пржевальского.</p>
+    </div>
+    <div class="pane">
+      <h3>Осёл</h3>
+      <button class="remove-button">[x]</button>
+      <p>Домашний осёл или ишак — одомашненный подвид дикого осла, сыгравший важную историческую роль в развитии хозяйства и культуры человека. Все одомашненные ослы относятся к африканским ослам.</p>
+    </div>
+    <div class="pane">
+      <button class="remove-button">[x]</button>
+      <h3>Корова, а также пара слов о диком быке, о волах и о тёлках. </h3>
+      <p>Коро́ва — самка домашнего быка, одомашненного подвида дикого быка, парнокопытного жвачного животного семейства полорогих. Самцы вида называются быками, молодняк — телятами, кастрированные самцы — волами. Молодых (до первой стельности) самок называют
+        тёлками.
+      </p>
+    </div>
   </div>
-
+  
   <script>
-    var field = document.getElementById('field');
-    var ball = document.getElementById('ball');
-
-
-    field.onclick = function(event) {
-
-      // координаты поля относительно окна
-      var fieldCoords = this.getBoundingClientRect();
-
-      // координаты левого-верхнего внутреннего угла поля
-      var fieldInnerCoords = {
-        top: fieldCoords.top + field.clientTop,
-        left: fieldCoords.left + field.clientLeft
-      };
-
-      // разместить по клику,
-      // но сдвинув относительно поля (т.к. position:relative)
-      // и сдвинув на половину ширины/высоты
-      // (!) используются координаты относительно окна clientX/Y, как и в fieldCoords
-      var ballCoords = {
-        top: event.clientY - fieldInnerCoords.top - ball.clientHeight / 2,
-        left: event.clientX - fieldInnerCoords.left - ball.clientWidth / 2
-      };
-
-      // вылезает за верхнюю границу - разместить по ней
-      if (ballCoords.top < 0) ballCoords.top = 0;
-
-      // вылезает за левую границу - разместить по ней
-      if (ballCoords.left < 0) ballCoords.left = 0;
-
-
-      // вылезает за правую границу - разместить по ней
-      if (ballCoords.left + ball.clientWidth > field.clientWidth) {
-        ballCoords.left = field.clientWidth - ball.clientWidth;
-      }
-
-      // вылезает за нижнюю границу - разместить по ней
-      if (ballCoords.top + ball.clientHeight > field.clientHeight) {
-        ballCoords.top = field.clientHeight - ball.clientHeight;
-      }
-
-      ball.style.left = ballCoords.left + 'px';
-      ball.style.top = ballCoords.top + 'px';
+    var div = document.querySelector('body div');
+    
+    div.onclick = function(event) {
+      var target = event.target;
+      
+      if(!target.classList.contains('remove-button')) return;
+      target.parentNode.hidden = !target.parentNode.hidden;
     }
   </script>
 
