@@ -1,115 +1,94 @@
 <!DOCTYPE HTML>
 <html>
-
 <!-- 
+	При наведении мыши на элемент, на нём возникает событие mouseover, при удалении мыши с элемента – событие mouseout.
+	Зная это, напишите JS-код, который будет делать так, что при наведении на элемент, если у него есть атрибут data-tooltip – над ним будет показываться подсказка с содержимым этого атрибута.
 
-Сделать сортировку таблицы при клике на заголовок.
-Требования:
-- Использовать делегирование.
-- Код не должен меняться при увеличении количества столбцов или строк.
+	В этой задаче можно полагать, что в элементе с атрибутом data-tooltip – только текст, то есть нет подэлементов.
 
-P.S. Обратите внимание, тип столбца задан атрибутом у заголовка. Это необходимо, ведь числа сортируются иначе чем строки. Соответственно, код это может использовать.
+	Детали оформления:
+	- Подсказка должна появляться при наведении на элемент, по центру и на небольшом расстоянии сверху. При уходе курсора с элемента – исчезать.
+	- Текст подсказки брать из значения атрибута data-tooltip. Это может быть произвольный HTML.
+	- Оформление подсказки должно задаваться CSS.
+	- Подсказка не должна вылезать за границы экрана, в том числе если страница частично прокручена. Если нельзя показать сверху – показывать снизу элемента.
+	
+	Важно: нужно использовать приём разработки «поведение», то есть поставить обработчик (точнее два) на document, а не на каждый элемент.
 
+	Плюс этого подхода – динамически добавленные в DOM позже элементы автоматически получат этот функционал.
  -->
-
 <head>
   <meta charset="utf-8">
   <style>
-    th {
-      cursor: pointer;
+    body {
+      height: 2000px;
+      /* подсказка должна работать независимо от прокрутки */
     }
 
-    th:hover {
-      background: yellow;
+    .tooltip {
+      position: fixed;
+      padding: 10px 20px;
+      /* красивости... */
+
+      border: 1px solid #b3c9ce;
+      border-radius: 4px;
+      text-align: center;
+      font: italic 14px/1.3 arial, sans-serif;
+      color: #333;
+      background: #fff;
+      box-shadow: 3px 3px 3px rgba(0, 0, 0, .3);
     }
   </style>
 </head>
 
 <body>
 
-  <table id="grid">
-    <thead>
-      <tr>
-        <th data-type="number">Возраст</th>
-        <th data-type="string">Имя</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>5</td>
-        <td>Вася</td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>Петя</td>
-      </tr>
-      <tr>
-        <td>12</td>
-        <td>Женя</td>
-      </tr>
-      <tr>
-        <td>9</td>
-        <td>Маша</td>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>Илья</td>
-      </tr>
-    </tbody>
-  </table>
+  <p>ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя</p>
+  <p>ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя</p>
+
+  <button data-tooltip="подсказка длиннее, чем элемент">Короткая кнопка</button>
+  <button data-tooltip="HTML<br>подсказка">Ещё кнопка</button>
+
+  <p>Прокрутите страницу, чтобы ссылки были вверху и проверьте, правильно ли показываются подсказки.</p>
+
 
   <script>
-    // сортировка таблицы
-    // использовать делегирование!
-    // должно быть масштабируемо:
-    // код работает без изменений при добавлении новых столбцов и строк
+    var showingTooltip;
 
-    var grid = document.getElementById('grid');
+    document.onmouseover = function(e) {
+      var target = e.target;
 
-    grid.onclick = function(e) {
-      if (e.target.tagName != 'TH') return;
+      var tooltip = target.getAttribute('data-tooltip');
+      if (!tooltip) return;
 
-      // Если TH -- сортируем
-      sortGrid(e.target.cellIndex, e.target.getAttribute('data-type'));
+      var tooltipElem = document.createElement('div');
+      tooltipElem.className = 'tooltip';
+      tooltipElem.innerHTML = tooltip;
+      document.body.appendChild(tooltipElem);
+
+      var coords = target.getBoundingClientRect();
+
+      var left = coords.left + (target.offsetWidth - tooltipElem.offsetWidth) / 2;
+      if (left < 0) left = 0; // не вылезать за левую границу окна
+
+      var top = coords.top - tooltipElem.offsetHeight - 5;
+      if (top < 0) { // не вылезать за верхнюю границу окна
+        top = coords.top + target.offsetHeight + 5;
+      }
+
+      tooltipElem.style.left = left + 'px';
+      tooltipElem.style.top = top + 'px';
+
+      showingTooltip = tooltipElem;
     };
 
-    function sortGrid(colNum, type) {
-      var tbody = grid.getElementsByTagName('tbody')[0];
+    document.onmouseout = function(e) {
 
-      // Составить массив из TR
-      var rowsArray = [].slice.call(tbody.rows);
-
-      // определить функцию сравнения, в зависимости от типа
-      var compare;
-
-      switch (type) {
-        case 'number':
-          compare = function(rowA, rowB) {
-            return rowA.cells[colNum].innerHTML - rowB.cells[colNum].innerHTML;
-          };
-          break;
-        case 'string':
-          compare = function(rowA, rowB) {
-            return rowA.cells[colNum].innerHTML > rowB.cells[colNum].innerHTML ? 1 : -1;
-          };
-          break;
+      if (showingTooltip) {
+        document.body.removeChild(showingTooltip);
+        showingTooltip = null;
       }
 
-      // сортировать
-      rowsArray.sort(compare);
-
-      // Убрать tbody из большого DOM документа для лучшей производительности
-      grid.removeChild(tbody);
-
-      // добавить результат в нужном порядке в TBODY
-      // они автоматически будут убраны со старых мест и вставлены в правильном порядке
-      for (var i = 0; i < rowsArray.length; i++) {
-        tbody.appendChild(rowsArray[i]);
-      }
-
-      grid.appendChild(tbody);
-
-    }
+    };
   </script>
 
 </body>
