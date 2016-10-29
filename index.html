@@ -1,96 +1,103 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-	При наведении мыши на элемент, на нём возникает событие mouseover, при удалении мыши с элемента – событие mouseout.
-	Зная это, напишите JS-код, который будет делать так, что при наведении на элемент, если у него есть атрибут data-tooltip – над ним будет показываться подсказка с содержимым этого атрибута.
+Сделайте так, чтобы при клике на ссылки внутри элемента #contents пользователю выводился вопрос о том, действительно ли он хочет покинуть страницу и если он не хочет, то прерывать переход по ссылке.
 
-	В этой задаче можно полагать, что в элементе с атрибутом data-tooltip – только текст, то есть нет подэлементов.
-
-	Детали оформления:
-	- Подсказка должна появляться при наведении на элемент, по центру и на небольшом расстоянии сверху. При уходе курсора с элемента – исчезать.
-	- Текст подсказки брать из значения атрибута data-tooltip. Это может быть произвольный HTML.
-	- Оформление подсказки должно задаваться CSS.
-	- Подсказка не должна вылезать за границы экрана, в том числе если страница частично прокручена. Если нельзя показать сверху – показывать снизу элемента.
-	
-	Важно: нужно использовать приём разработки «поведение», то есть поставить обработчик (точнее два) на document, а не на каждый элемент.
-
-	Плюс этого подхода – динамически добавленные в DOM позже элементы автоматически получат этот функционал.
+Детали:
+- Содержимое #contents может быть загружено динамически и присвоено при помощи innerHTML. Так что найти все ссылки и поставить на них обработчики нельзя. Используйте делегирование.
+- Содержимое может содержать вложенные теги, в том числе внутри ссылок, например, <a href=".."><i>...</i></a>.
  -->
 <head>
   <meta charset="utf-8">
   <style>
-    body {
-      height: 2000px;
-      /* подсказка должна работать независимо от прокрутки */
-    }
-
-    .tooltip {
-      position: fixed;
-      padding: 10px 20px;
-      /* красивости... */
-
-      border: 1px solid #b3c9ce;
-      border-radius: 4px;
-      text-align: center;
-      font: italic 14px/1.3 arial, sans-serif;
-      color: #333;
-      background: #fff;
-      box-shadow: 3px 3px 3px rgba(0, 0, 0, .3);
+    #contents {
+      padding: 5px;
+      border: 1px green solid;
     }
   </style>
 </head>
 
 <body>
 
-  <p>ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя</p>
-  <p>ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя ЛяЛяЛя</p>
-
-  <button data-tooltip="подсказка длиннее, чем элемент">Короткая кнопка</button>
-  <button data-tooltip="HTML<br>подсказка">Ещё кнопка</button>
-
-  <p>Прокрутите страницу, чтобы ссылки были вверху и проверьте, правильно ли показываются подсказки.</p>
-
-
+  <fieldset id="contents">
+    <legend>#contents</legend>
+    <p>
+      Как насчет почитать <a href="http://wikipedia.org">Википедию</a>, или посетить <a href="http://w3.org"><i>W3.org</i></a> и узнать про современные стандарты?
+    </p>
+  </fieldset>
   <script>
-    var showingTooltip;
-
-    document.onmouseover = function(e) {
-      var target = e.target;
-
-      var tooltip = target.getAttribute('data-tooltip');
-      if (!tooltip) return;
-
-      var tooltipElem = document.createElement('div');
-      tooltipElem.className = 'tooltip';
-      tooltipElem.innerHTML = tooltip;
-      document.body.appendChild(tooltipElem);
-
-      var coords = target.getBoundingClientRect();
-
-      var left = coords.left + (target.offsetWidth - tooltipElem.offsetWidth) / 2;
-      if (left < 0) left = 0; // не вылезать за левую границу окна
-
-      var top = coords.top - tooltipElem.offsetHeight - 5;
-      if (top < 0) { // не вылезать за верхнюю границу окна
-        top = coords.top + target.offsetHeight + 5;
+    document.onclick = function(event) {
+      var target = event.target;
+      while(target != this) {
+        if(target.tagName != 'A') {
+          target = target.parentNode;
+        } else {
+          break;
+        }
       }
-
-      tooltipElem.style.left = left + 'px';
-      tooltipElem.style.top = top + 'px';
-
-      showingTooltip = tooltipElem;
-    };
-
-    document.onmouseout = function(e) {
-
-      if (showingTooltip) {
-        document.body.removeChild(showingTooltip);
-        showingTooltip = null;
-      }
-
-    };
+      
+      var href = target.getAttribute('href');
+      var question = confirm('Перейти на ' + href + '?');
+      
+      return question ? null : false;
+    }
   </script>
-
 </body>
 
 </html>
+
+<!-- 
+								Решение из задачника!!!
+
+Это – классическая задача на тему делегирования.
+
+В реальной жизни, мы можем перехватить событие и создать AJAX-запрос к серверу, который сохранит информацию о том, по какой ссылке ушел посетитель.
+
+Мы перехватываем событие на contents и поднимаемся до parentNode пока не получим A или не упремся в контейнер.
+
+В строке (*) используется атрибут, а не свойство href, чтобы показать в confirm именно то, что написано в HTML-атрибуте, так как свойство может отличаться, оно обязано содержать полный валидный адрес.
+
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    #contents {
+      padding: 5px;
+      border: 1px green solid;
+    }
+  </style>
+</head>
+
+<body>
+
+  <fieldset id="contents">
+    <legend>#contents</legend>
+    <p>
+      Как насчет почитать <a href="http://wikipedia.org">Википедию</a>, или посетить <a href="http://w3.org"><i>W3.org</i></a> и узнать про современные стандарты?
+    </p>
+  </fieldset>
+
+  <script>
+    document.getElementById('contents').onclick = function(event) {
+
+      function handleLink(href) {
+        var isLeaving = confirm('Уйти на ' + href + '?');
+        if (!isLeaving) return false;
+      }
+
+      var target = event.target;
+
+      while (target != this) {
+        if (target.nodeName == 'A') {
+          return handleLink(target.getAttribute('href'));
+        }
+        target = target.parentNode;
+      }
+    }
+  </script>
+</body>
+
+</html>
+ -->
