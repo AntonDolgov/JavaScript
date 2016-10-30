@@ -1,76 +1,86 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-Создайте галерею изображений, в которой основное изображение изменяется при клике на уменьшенный вариант.
-Для обработки событий используйте делегирование, т.е. не более одного обработчика.
+Эта задача состоит из трёх частей.
+1. Сделайте список, элементы которого можно выделять кликом.
+2. Добавьте мульти-выделение. Если клик с нажатым Ctrl (Cmd под Mac), то элемент добавляется-удаляется из выделенных.
+3. Добавьте выделение промежутков. Если происходит клик с нажатым Shift, то к выделению добавляется промежуток элементов от предыдущего кликнутого до этого. При этом не важно, какое именно действие делал предыдущий клик. Это похоже на то, как работает файловый менеджер в ряде ОС, но чуть проще, так как конкретная реализация выделений различается у разных ОС, и её точное воспроизведение не входит в эту задачу.
 
-P.S. Обратите внимание – клик может быть как на маленьком изображении IMG, так и на A вне него. При этом event.target будет, соответственно, либо IMG, либо A.
-
-Дополнительно:
-- Если получится – сделайте предзагрузку больших изображений, чтобы при клике они появлялись сразу.
-- Всё ли в порядке с семантической вёрсткой в HTML исходного документа? Если нет – поправьте, чтобы было, как нужно.
+P.S. В этой задаче можно считать, что в элементах списка может быть только текст, без вложенных тегов.
+P.P.S. Обработка одновременного нажатия Ctrl(Cmd) и Shift может быть любой.
  -->
 <head>
-  <title>Галерея</title>
-  <link rel="stylesheet" href="gallery.css">
   <meta charset="utf-8">
+  <style>
+    .selected {
+      background: #0f0;
+    }
+
+    li {
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-  <p><img id="largeImg" src="https://js.cx/gallery/img1-lg.jpg" alt="Large image"></p>
+  Клик на элементе выделяет только его.
+  <br> Ctrl(Cmd)+Клик добавляет/убирает элемент из выделенных.
+  <br> Shift+Клик добавляет промежуток от последнего кликнутого к выделению.
+  <br>
 
-  <ul id="thumbs">
-    <!-- При наведении на изображение показывается встроенная подсказка браузера (title) -->
-    <li>
-      <a href="https://js.cx/gallery/img2-lg.jpg" title="Image 2"><img src="https://js.cx/gallery/img2-thumb.jpg"></a>
-    </li>
-    <li>
-      <a href="https://js.cx/gallery/img3-lg.jpg" title="Image 3"><img src="https://js.cx/gallery/img3-thumb.jpg"></a>
-    </li>
-    <li>
-      <a href="https://js.cx/gallery/img4-lg.jpg" title="Image 4"><img src="https://js.cx/gallery/img4-thumb.jpg"></a>
-    </li>
-    <li>
-      <a href="https://js.cx/gallery/img5-lg.jpg" title="Image 5"><img src="https://js.cx/gallery/img5-thumb.jpg"></a>
-    </li>
-    <li>
-      <a href="https://js.cx/gallery/img6-lg.jpg" title="Image 6"><img src="https://js.cx/gallery/img6-thumb.jpg"></a>
-    </li>
+  <ul>
+    <li>Кристофер Робин</li>
+    <li>Винни-Пух</li>
+    <li>Ослик Иа</li>
+    <li>Мудрая Сова</li>
+    <li>Кролик. Просто кролик.</li>
   </ul>
 
   <script>
-    var largeImg = document.getElementById('largeImg');
-
-    var thumbs = document.getElementById('thumbs');
-
-    thumbs.onclick = function(e) {
-      var target = e.target;
-
-      while (target != this) {
-
-        if (target.nodeName == 'A') {
-          showThumbnail(target.href, target.title);
-          return false;
+    var ul = document.querySelector('ul');
+    var oldTarget = null, newTarget = null;
+    
+    ul.onclick = function(event) {
+      var target = event.target;
+      if(target.tagName != 'LI') return;
+      oldTarget = newTarget;
+      newTarget = target;
+      
+      //с нажатием Ctrl
+      if(event.ctrlKey || event.metaKey) {
+        if(target.style.backgroundColor == 'lightgreen') {
+          target.style.backgroundColor = '';
+        } else {
+          target.style.backgroundColor = 'lightgreen';
         }
-
-        target = target.parentNode;
+      // конец блока кода 
+      } else if(event.shiftKey) { //с нажатием Shift
+        var startElem = oldTarget || ul.children[0];
+        
+        var isLastClickedBefore = startElem.compareDocumentPosition(target) & 4;
+        
+        if(isLastClickedBefore) {
+          for(var elem = startElem; elem != target; elem = elem.nextElementSibling) {
+            elem.style.backgroundColor = 'lightgreen';
+          }
+        } else {
+          for(var elem = startElem; elem != target; elem = elem.previousElementSibling) {
+            elem.style.backgroundColor = 'lightgreen';
+          }
+        }
+        elem.style.backgroundColor = 'lightgreen';
+      //конец блока кода
+      } else { //без нажатия
+        for(var i = 0; i < ul.children.length; i++) {
+          ul.children[i].style.backgroundColor = '';
+        }
+        target.style.backgroundColor = 'lightgreen';
       }
-
     }
-
-    function showThumbnail(href, title) {
-      largeImg.src = href;
-      largeImg.alt = title;
-    }
-
-
-    /* предзагрузка */
-    var imgs = thumbs.getElementsByTagName('img');
-    for (var i = 0; i < imgs.length; i++) {
-      var url = imgs[i].parentNode.href;
-      var img = document.createElement('img');
-      img.src = url;
+    
+    ul.onmousedown = function() {
+      return false;
     }
   </script>
 
