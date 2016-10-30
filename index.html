@@ -1,22 +1,16 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-Эта задача состоит из трёх частей.
-1. Сделайте список, элементы которого можно выделять кликом.
-2. Добавьте мульти-выделение. Если клик с нажатым Ctrl (Cmd под Mac), то элемент добавляется-удаляется из выделенных.
-3. Добавьте выделение промежутков. Если происходит клик с нажатым Shift, то к выделению добавляется промежуток элементов от предыдущего кликнутого до этого. При этом не важно, какое именно действие делал предыдущий клик. Это похоже на то, как работает файловый менеджер в ряде ОС, но чуть проще, так как конкретная реализация выделений различается у разных ОС, и её точное воспроизведение не входит в эту задачу.
+Есть кликабельное JavaScript-дерево UL/LI
+Однако, проблема в том, что скрытие-раскрытие происходит даже при клике вне заголовка, на пустом пространстве справа от него.
+Как скрывать/раскрывать детей только при клике на заголовок?
 
-P.S. В этой задаче можно считать, что в элементах списка может быть только текст, без вложенных тегов.
-P.P.S. Обработка одновременного нажатия Ctrl(Cmd) и Shift может быть любой.
+Решите задачу без обёртывания заголовков в SPAN, используя работу с координатами.
  -->
 <head>
   <meta charset="utf-8">
   <style>
-    .selected {
-      background: #0f0;
-    }
-
-    li {
+    .tree li {
       cursor: pointer;
     }
   </style>
@@ -24,63 +18,80 @@ P.P.S. Обработка одновременного нажатия Ctrl(Cmd) 
 
 <body>
 
-  Клик на элементе выделяет только его.
-  <br> Ctrl(Cmd)+Клик добавляет/убирает элемент из выделенных.
-  <br> Shift+Клик добавляет промежуток от последнего кликнутого к выделению.
-  <br>
+  <ul class="tree" id="tree">
+    <li>Животные
+      <ul>
+        <li>Млекопитающие
+          <ul>
+            <li>Коровы</li>
+            <li>Ослы</li>
+            <li>Собаки</li>
+            <li>Тигры</li>
+          </ul>
+        </li>
+        <li>Другие
+          <ul>
+            <li>Змеи</li>
+            <li>Птицы</li>
+            <li>Ящерицы</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li>Рыбы
+      <ul>
+        <li>Аквариумные
+          <ul>
+            <li>Гуппи</li>
+            <li>Скалярии</li>
+          </ul>
 
-  <ul>
-    <li>Кристофер Робин</li>
-    <li>Винни-Пух</li>
-    <li>Ослик Иа</li>
-    <li>Мудрая Сова</li>
-    <li>Кролик. Просто кролик.</li>
+        </li>
+        <li>Морские
+          <ul>
+            <li>Морская форель</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
   </ul>
 
   <script>
-    var ul = document.querySelector('ul');
-    var oldTarget = null, newTarget = null;
-    
-    ul.onclick = function(event) {
-      var target = event.target;
-      if(target.tagName != 'LI') return;
-      oldTarget = newTarget;
-      newTarget = target;
-      
-      //с нажатием Ctrl
-      if(event.ctrlKey || event.metaKey) {
-        if(target.style.backgroundColor == 'lightgreen') {
-          target.style.backgroundColor = '';
-        } else {
-          target.style.backgroundColor = 'lightgreen';
-        }
-      // конец блока кода 
-      } else if(event.shiftKey) { //с нажатием Shift
-        var startElem = oldTarget || ul.children[0];
-        
-        var isLastClickedBefore = startElem.compareDocumentPosition(target) & 4;
-        
-        if(isLastClickedBefore) {
-          for(var elem = startElem; elem != target; elem = elem.nextElementSibling) {
-            elem.style.backgroundColor = 'lightgreen';
-          }
-        } else {
-          for(var elem = startElem; elem != target; elem = elem.previousElementSibling) {
-            elem.style.backgroundColor = 'lightgreen';
-          }
-        }
-        elem.style.backgroundColor = 'lightgreen';
-      //конец блока кода
-      } else { //без нажатия
-        for(var i = 0; i < ul.children.length; i++) {
-          ul.children[i].style.backgroundColor = '';
-        }
-        target.style.backgroundColor = 'lightgreen';
-      }
+    var tree = document.getElementById('tree');
+
+    /* проверить на попадание события в заголовок LI */
+    function isOverTitle(evt, li) {
+      /* обернуть заголовок в span */
+      var titleWrapper = document.createElement('span');
+      var titleTextNode = li.firstChild; // <li>TITLE...
+      li.insertBefore(titleWrapper, titleTextNode); // <li><span></span>TITLE
+      titleWrapper.appendChild(titleTextNode); // <li><span>TITLE</span>
+
+      /* определить, был ли клик по координатам - в SPAN ?*/
+      var isClickOnTitle = (document.elementFromPoint(evt.clientX, evt.clientY) == titleWrapper);
+
+      /* в любом случае вернуть заголовок в текст обратно перед тем как идти дальше */
+      titleWrapper.removeChild(titleWrapper.firstChild); // <li><span></span>
+      li.replaceChild(titleTextNode, titleWrapper); // <li>TITLE...
+
+      return isClickOnTitle;
     }
-    
-    ul.onmousedown = function() {
-      return false;
+
+    /* отслеживаем клики на всём дереве */
+    tree.onclick = function(evt) {
+      var evt = evt || event;
+      var target = evt.target || evt.srcElement;
+
+
+      if (!isOverTitle(evt, target)) {
+        return; // клик не на заголовке
+      }
+
+      /* раскрыть-закрыть детей */
+      var node = target.getElementsByTagName('ul')[0];
+      if (!node) return; // нет детей
+
+      node.style.display = node.style.display ? '' : 'none';
     }
   </script>
 
