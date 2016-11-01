@@ -1,72 +1,159 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html>
 <!-- 
-Создайте слайдер
+В этой задаче вы можете проверить своё понимание сразу нескольких аспектов Drag’n’Drop.
 
-Важно:
-- Слайдер должен нормально работать при резком движении мыши влево или вправо, за пределы полосы. При этом бегунок должен останавливаться четко в нужном конце полосы.
-- При нажатом бегунке мышь может выходить за пределы полосы слайдера, но слайдер пусть все равно работает (это удобно для пользователя).
+Сделайте так, чтобы элементы с классом draggable можно было переносить мышкой. По окончании переноса элемент остаётся на том месте в документе, где его положили.
+
+Требования к реализации:
+- Должен быть 1 обработчик на document, использующий делегирование.
+- Если элементы подносят к вертикальным краям окна – оно должно прокручиваться вниз/вверх.
+- Горизонтальной прокрутки в этой задаче не существует.
+- Элемент при переносе, даже при резких движениях мышкой, не должен попасть вне окна.
+
+Футбольное поле в этой задаче слишком большое, чтобы показывать его здесь, поэтому откройте его, кликнув по ссылке ниже. Там же и подробное описание задачи (осторожно, винни-пух и супергерои!).
  -->
 <head>
   <meta charset="utf-8">
-  <link rel="stylesheet" href="style.css">
+  <style>
+		html,
+		body {
+		  margin: 0;
+		  padding: 0;
+		}
+
+		#field {
+		  background: url(https://js.cx/drag-heroes/field.png);
+		  width: 800px;
+		  height: 600px;
+		  float: left;
+		}
+		/* герои и мяч (переносимые элементы) */
+
+		.hero {
+		  background: url(https://js.cx/drag-heroes/heroes.png);
+		  width: 130px;
+		  height: 128px;
+		  float: left;
+		}
+
+		#hero1 {
+		  background-position: 0 0;
+		}
+
+		#hero2 {
+		  background-position: 0 -128px;
+		}
+
+		#hero3 {
+		  background-position: -120px 0;
+		}
+
+		#hero4 {
+		  background-position: -125px -128px;
+		}
+
+		#hero5 {
+		  background-position: -248px -128px;
+		}
+
+		#hero6 {
+		  background-position: -244px 0;
+		}
+
+		.draggable {
+		  cursor: pointer;
+		}
+  </style>
 </head>
 
 <body>
 
-  <div id="slider" class="slider">
-    <div class="thumb"></div>
+  <h2>Расставьте супергероев по полю.</h2>
+
+  <p>Супергерои и мяч -- это элементы с классом "draggable". Сделайте так, чтобы их можно было переносить.</p>
+
+  <p>Важно: если супергероя подносят к низу или верху страницы, она должна автоматически прокручиваться. Если страница помещается на вашем экране целиком и не имеет вертикальной прокрутки -- сделайте окно браузера меньше, чтобы протестировать эту возможность.</p>
+
+  <p>Да, и ещё: супергерои ни при каких условиях не должны попасть за край экрана.</p>
+
+  <div id="field">
+
   </div>
 
+  <div class="hero draggable" id="hero1"></div>
+  <div class="hero draggable" id="hero2"></div>
+  <div class="hero draggable" id="hero3"></div>
+  <div class="hero draggable" id="hero4"></div>
+  <div class="hero draggable" id="hero5"></div>
+  <div class="hero draggable" id="hero6"></div>
+
+  <img src="https://js.cx/drag-heroes/ball.png" class="draggable">
+
+  <div style="clear:both"></div>
+
   <script>
-    var sliderElem = document.getElementById('slider');
-    var thumbElem = sliderElem.children[0];
+		var field = document.getElementById('field');
+		var draggable = document.getElementsByClassName('draggable');
 
-    thumbElem.onmousedown = function(e) {
-      var thumbCoords = getCoords(thumbElem);
-      var shiftX = e.pageX - thumbCoords.left;
-      // shiftY здесь не нужен, слайдер двигается только по горизонтали
+		document.onmousedown = function(e) {
+		  var target = e.target;
+		  if(!target.classList.contains('draggable')) return;
 
-      var sliderCoords = getCoords(sliderElem);
+		  var coords = getCoords(target);
+		  var shiftX = e.pageX - coords.left;
+		  var shiftY = e.pageY - coords.top;
+		  
+		  target.style.position = 'absolute';
+		  target.style.zIndex = 1000;
+		  document.body.appendChild(target);
+		  moveAt(e);
+		  
+		  var newLeft, newTop;
+		  
+		  function moveAt(e) {
+		    newLeft = e.pageX - shiftX;
+		    newTop = e.pageY - shiftY;
+		    if(newLeft < 0) newLeft = 0;
+		    if(newLeft > document.body.scrollWidth - target.offsetWidth) newLeft = document.body.scrollWidth - target.offsetWidth;
+		    target.style.left = newLeft + 'px';
+		    target.style.top = newTop + 'px';
+		  }
+		  
+		  document.onmousemove = function(e) {
+		    moveAt(e);
+		  };
 
-      document.onmousemove = function(e) {
-        //  вычесть координату родителя, т.к. position: relative
-        var newLeft = e.pageX - shiftX - sliderCoords.left;
+		  target.onmouseup = function() {
+		    if(newTop < field.offsetTop) {
+		      newTop = field.offsetTop;
+		      target.style.top = newTop + 'px';
+		    }
+		    
+		    if(newTop > field.offsetTop + field.offsetHeight - target.offsetHeight) {
+		      newTop = field.offsetTop + field.offsetHeight - target.offsetHeight;
+		      target.style.top = newTop + 'px';
+		    }
+		    
+		    document.onmousemove = null;
+		    target.onmouseup = null;
+		  };
+		}
 
-        // курсор ушёл вне слайдера
-        if (newLeft < 0) {
-          newLeft = 0;
-        }
-        var rightEdge = sliderElem.offsetWidth - thumbElem.offsetWidth;
-        if (newLeft > rightEdge) {
-          newLeft = rightEdge;
-        }
 
-        thumbElem.style.left = newLeft + 'px';
-      }
 
-      document.onmouseup = function() {
-        document.onmousemove = document.onmouseup = null;
-      };
+		document.ondragstart = function() {
+		  return false;
+		}
 
-      return false; // disable selection start (cursor change)
-    };
-
-    thumbElem.ondragstart = function() {
-      return false;
-    };
-
-    function getCoords(elem) { // кроме IE8-
-      var box = elem.getBoundingClientRect();
-
-      return {
-        top: box.top + pageYOffset,
-        left: box.left + pageXOffset
-      };
-
-    }
+		function getCoords(elem) { // кроме IE8-
+		      var box = elem.getBoundingClientRect();
+		      return {
+		        top: box.top + pageYOffset,
+		        left: box.left + pageXOffset
+		      };
+		}
   </script>
-
 </body>
 
 </html>
