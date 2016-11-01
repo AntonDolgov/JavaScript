@@ -1,97 +1,69 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
 <!-- 
-Есть кликабельное JavaScript-дерево UL/LI
-Однако, проблема в том, что скрытие-раскрытие происходит даже при клике вне заголовка, на пустом пространстве справа от него.
-Как скрывать/раскрывать детей только при клике на заголовок?
+Создайте слайдер
 
-Решите задачу без обёртывания заголовков в SPAN, используя работу с координатами.
+Важно:
+- Слайдер должен нормально работать при резком движении мыши влево или вправо, за пределы полосы. При этом бегунок должен останавливаться четко в нужном конце полосы.
+- При нажатом бегунке мышь может выходить за пределы полосы слайдера, но слайдер пусть все равно работает (это удобно для пользователя).
  -->
 <head>
   <meta charset="utf-8">
-  <style>
-    .tree li {
-      cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <ul class="tree" id="tree">
-    <li>Животные
-      <ul>
-        <li>Млекопитающие
-          <ul>
-            <li>Коровы</li>
-            <li>Ослы</li>
-            <li>Собаки</li>
-            <li>Тигры</li>
-          </ul>
-        </li>
-        <li>Другие
-          <ul>
-            <li>Змеи</li>
-            <li>Птицы</li>
-            <li>Ящерицы</li>
-          </ul>
-        </li>
-      </ul>
-    </li>
-    <li>Рыбы
-      <ul>
-        <li>Аквариумные
-          <ul>
-            <li>Гуппи</li>
-            <li>Скалярии</li>
-          </ul>
-
-        </li>
-        <li>Морские
-          <ul>
-            <li>Морская форель</li>
-          </ul>
-        </li>
-      </ul>
-    </li>
-  </ul>
+  <div id="slider" class="slider">
+    <div class="thumb"></div>
+  </div>
 
   <script>
-    var tree = document.getElementById('tree');
+    var sliderElem = document.getElementById('slider');
+    var thumbElem = sliderElem.children[0];
 
-    /* проверить на попадание события в заголовок LI */
-    function isOverTitle(evt, li) {
-      /* обернуть заголовок в span */
-      var titleWrapper = document.createElement('span');
-      var titleTextNode = li.firstChild; // <li>TITLE...
-      li.insertBefore(titleWrapper, titleTextNode); // <li><span></span>TITLE
-      titleWrapper.appendChild(titleTextNode); // <li><span>TITLE</span>
+    thumbElem.onmousedown = function(e) {
+      var thumbCoords = getCoords(thumbElem);
+      var shiftX = e.pageX - thumbCoords.left;
+      // shiftY здесь не нужен, слайдер двигается только по горизонтали
 
-      /* определить, был ли клик по координатам - в SPAN ?*/
-      var isClickOnTitle = (document.elementFromPoint(evt.clientX, evt.clientY) == titleWrapper);
+      var sliderCoords = getCoords(sliderElem);
 
-      /* в любом случае вернуть заголовок в текст обратно перед тем как идти дальше */
-      titleWrapper.removeChild(titleWrapper.firstChild); // <li><span></span>
-      li.replaceChild(titleTextNode, titleWrapper); // <li>TITLE...
+      document.onmousemove = function(e) {
+        //  вычесть координату родителя, т.к. position: relative
+        var newLeft = e.pageX - shiftX - sliderCoords.left;
 
-      return isClickOnTitle;
-    }
+        // курсор ушёл вне слайдера
+        if (newLeft < 0) {
+          newLeft = 0;
+        }
+        var rightEdge = sliderElem.offsetWidth - thumbElem.offsetWidth;
+        if (newLeft > rightEdge) {
+          newLeft = rightEdge;
+        }
 
-    /* отслеживаем клики на всём дереве */
-    tree.onclick = function(evt) {
-      var evt = evt || event;
-      var target = evt.target || evt.srcElement;
-
-
-      if (!isOverTitle(evt, target)) {
-        return; // клик не на заголовке
+        thumbElem.style.left = newLeft + 'px';
       }
 
-      /* раскрыть-закрыть детей */
-      var node = target.getElementsByTagName('ul')[0];
-      if (!node) return; // нет детей
+      document.onmouseup = function() {
+        document.onmousemove = document.onmouseup = null;
+      };
 
-      node.style.display = node.style.display ? '' : 'none';
+      return false; // disable selection start (cursor change)
+    };
+
+    thumbElem.ondragstart = function() {
+      return false;
+    };
+
+    function getCoords(elem) { // кроме IE8-
+      var box = elem.getBoundingClientRect();
+
+      return {
+        top: box.top + pageYOffset,
+        left: box.left + pageXOffset
+      };
+
     }
   </script>
 
