@@ -1,86 +1,92 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-В этой задаче вы можете проверить своё понимание сразу нескольких аспектов Drag’n’Drop.
+Создайте кнопку навигации, которая помогает при прокрутке страницы.
 
-Сделайте так, чтобы элементы с классом draggable можно было переносить мышкой. По окончании переноса элемент остаётся на том месте в документе, где его положили.
+Работать должна следующим образом:
+- Пока страница промотана меньше чем на высоту экрана вниз – кнопка не видна.
+- При промотке страницы вниз больше, чем на высоту экрана, появляется кнопка «стрелка вверх».
+- При нажатии на нее страница прыгает вверх, но не только. Дополнительно, кнопка меняется на «стрелка вниз» и при клике возвратит на старое место. Если же в этом состоянии посетитель сам прокрутит вниз больше, чем один экран, то она вновь изменится на «стрелка вверх».
 
-Требования к реализации:
-- Должен быть 1 обработчик на document, использующий делегирование.
-- Если элементы подносят к вертикальным краям окна – оно должно прокручиваться вниз/вверх.
-- Горизонтальной прокрутки в этой задаче не существует.
-- Элемент при переносе, даже при резких движениях мышкой, не должен попасть вне окна.
-
-Футбольное поле в этой задаче слишком большое, чтобы показывать его здесь, поэтому откройте его, кликнув по ссылке ниже. Там же и подробное описание задачи (осторожно, винни-пух и супергерои!).
+Должен получиться удобный навигационный помощник.
  -->
 <head>
   <meta charset="utf-8">
   <style>
-		html,
-		body {
-		  margin: 0;
-		  padding: 0;
-		}
+    body,
+    html {
+      height: 100%;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
 
-		#field {
-		  background: url("IMG_3477.jpg");
-		  width: 200px;
-		  height: 200px;
-		  float: left;
-		}
+    #matrix {
+      width: 400px;
+      margin: auto;
+      overflow: auto;
+      text-align: justify;
+    }
+    
+    .page-up, .page-down {
+      display: none;
+      position: fixed;
+      left: 10px;
+      top: 10px;
+      color: green;
+      cursor: pointer;
+    }
   </style>
+  <meta charset="utf-8">
 </head>
 
 <body>
-<center>
-  <p id="text" style="margin: 40px; width: 200px; height:60px; border: 1px solid red">
-    При прокрутке колёсика мыши над этим элементом, он будет масштабироваться.
-  </p>
-</center>
+
+  <div class="page-up">▲</div><div class="page-down">▼</div> 
+
+  <div id="matrix">
+    <script>
+      for (var i = 0; i < 2000; i++) document.writeln(i)
+    </script>
   </div>
 
-  
-
   <script>
-  	var elem = document.getElementById('text');
-
-  	if (elem.addEventListener) {
-		  if ('onwheel' in document) {
-		    // IE9+, FF17+, Ch31+
-		    elem.addEventListener("wheel", onWheel);
-		  } else if ('onmousewheel' in document) {
-		    // устаревший вариант события
-		    elem.addEventListener("mousewheel", onWheel);
-		  } else {
-		    // Firefox < 17
-		    elem.addEventListener("MozMousePixelScroll", onWheel);
-		  }
-		} else { // IE8-
-		  elem.attachEvent("onmousewheel", onWheel);
-		}
-		var elemScale = 1;
-		function onWheel(e) {
-		  e = e || window.event;
-
-		  var oldDelta = 0, newDelta = 0;
-		  // wheelDelta не дает возможность узнать количество пикселей
-		  var delta = e.deltaY || e.detail || e.wheelDelta;
-		  oldDelta = newDelta;
-		  newDelta = delta;
-		  console.log(oldDelta + '\n' + newDelta);
-
-		  if(newDelta > oldDelta) {
-		  	elemScale -= 0.1;
-		  }
-		  if(newDelta < oldDelta) {
-		  	elemScale += 0.1;
-		  }
-
-
-		  elem.style.transform = 'scale(' + elemScale + ')';
-
-		  e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-		}
+    var pageUp = document.querySelector('.page-up');
+    var pageDown = document.querySelector('.page-down');
+    var docHeight = document.documentElement.clientHeight;
+    var currentY = 0;
+    
+    window.onscroll = function() {
+      var scrolled = window.pageYOffset || document.documentElement.scrollTop;
+      if(scrolled > docHeight) {
+        currentY = scrolled;
+        pageDown.style.display = '';
+        pageUp.style.display = 'block';
+      } else {
+        pageUp.style.display = '';
+      }
+    }
+    
+    pageUp.onclick = function() {
+      window.scrollTo(0,0);
+      pageUp.style.display = '';
+      pageDown.style.display = 'block';
+      
+    }
+    
+    pageDown.onclick = function() {
+      window.scrollTo(0,currentY);
+      pageDown.style.display = '';
+      pageUp.style.display = 'block';
+      
+    }
+    
+    pageUp.onselectstart = function() {
+      return false;
+    }
+    pageDown.onselectstart = function() {
+      return false;
+    }
   </script>
 </body>
 
