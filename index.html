@@ -23,135 +23,63 @@
 		}
 
 		#field {
-		  background: url(https://js.cx/drag-heroes/field.png);
-		  width: 800px;
-		  height: 600px;
+		  background: url("IMG_3477.jpg");
+		  width: 200px;
+		  height: 200px;
 		  float: left;
-		}
-		/* герои и мяч (переносимые элементы) */
-
-		.hero {
-		  background: url(https://js.cx/drag-heroes/heroes.png);
-		  width: 130px;
-		  height: 128px;
-		  float: left;
-		}
-
-		#hero1 {
-		  background-position: 0 0;
-		}
-
-		#hero2 {
-		  background-position: 0 -128px;
-		}
-
-		#hero3 {
-		  background-position: -120px 0;
-		}
-
-		#hero4 {
-		  background-position: -125px -128px;
-		}
-
-		#hero5 {
-		  background-position: -248px -128px;
-		}
-
-		#hero6 {
-		  background-position: -244px 0;
-		}
-
-		.draggable {
-		  cursor: pointer;
 		}
   </style>
 </head>
 
 <body>
-
-  <h2>Расставьте супергероев по полю.</h2>
-
-  <p>Супергерои и мяч -- это элементы с классом "draggable". Сделайте так, чтобы их можно было переносить.</p>
-
-  <p>Важно: если супергероя подносят к низу или верху страницы, она должна автоматически прокручиваться. Если страница помещается на вашем экране целиком и не имеет вертикальной прокрутки -- сделайте окно браузера меньше, чтобы протестировать эту возможность.</p>
-
-  <p>Да, и ещё: супергерои ни при каких условиях не должны попасть за край экрана.</p>
-
-  <div id="field">
-
+<center>
+  <p id="text" style="margin: 40px; width: 200px; height:60px; border: 1px solid red">
+    При прокрутке колёсика мыши над этим элементом, он будет масштабироваться.
+  </p>
+</center>
   </div>
 
-  <div class="hero draggable" id="hero1"></div>
-  <div class="hero draggable" id="hero2"></div>
-  <div class="hero draggable" id="hero3"></div>
-  <div class="hero draggable" id="hero4"></div>
-  <div class="hero draggable" id="hero5"></div>
-  <div class="hero draggable" id="hero6"></div>
-
-  <img src="https://js.cx/drag-heroes/ball.png" class="draggable">
-
-  <div style="clear:both"></div>
+  
 
   <script>
-		var field = document.getElementById('field');
-		var draggable = document.getElementsByClassName('draggable');
+  	var elem = document.getElementById('text');
 
-		document.onmousedown = function(e) {
-		  var target = e.target;
-		  if(!target.classList.contains('draggable')) return;
-
-		  var coords = getCoords(target);
-		  var shiftX = e.pageX - coords.left;
-		  var shiftY = e.pageY - coords.top;
-		  
-		  target.style.position = 'absolute';
-		  target.style.zIndex = 1000;
-		  document.body.appendChild(target);
-		  moveAt(e);
-		  
-		  var newLeft, newTop;
-		  
-		  function moveAt(e) {
-		    newLeft = e.pageX - shiftX;
-		    newTop = e.pageY - shiftY;
-		    if(newLeft < 0) newLeft = 0;
-		    if(newLeft > document.body.scrollWidth - target.offsetWidth) newLeft = document.body.scrollWidth - target.offsetWidth;
-		    target.style.left = newLeft + 'px';
-		    target.style.top = newTop + 'px';
+  	if (elem.addEventListener) {
+		  if ('onwheel' in document) {
+		    // IE9+, FF17+, Ch31+
+		    elem.addEventListener("wheel", onWheel);
+		  } else if ('onmousewheel' in document) {
+		    // устаревший вариант события
+		    elem.addEventListener("mousewheel", onWheel);
+		  } else {
+		    // Firefox < 17
+		    elem.addEventListener("MozMousePixelScroll", onWheel);
 		  }
-		  
-		  document.onmousemove = function(e) {
-		    moveAt(e);
-		  };
-
-		  target.onmouseup = function() {
-		    if(newTop < field.offsetTop) {
-		      newTop = field.offsetTop;
-		      target.style.top = newTop + 'px';
-		    }
-		    
-		    if(newTop > field.offsetTop + field.offsetHeight - target.offsetHeight) {
-		      newTop = field.offsetTop + field.offsetHeight - target.offsetHeight;
-		      target.style.top = newTop + 'px';
-		    }
-		    
-		    document.onmousemove = null;
-		    target.onmouseup = null;
-		  };
+		} else { // IE8-
+		  elem.attachEvent("onmousewheel", onWheel);
 		}
+		var elemScale = 1;
+		function onWheel(e) {
+		  e = e || window.event;
+
+		  var oldDelta = 0, newDelta = 0;
+		  // wheelDelta не дает возможность узнать количество пикселей
+		  var delta = e.deltaY || e.detail || e.wheelDelta;
+		  oldDelta = newDelta;
+		  newDelta = delta;
+		  console.log(oldDelta + '\n' + newDelta);
+
+		  if(newDelta > oldDelta) {
+		  	elemScale -= 0.1;
+		  }
+		  if(newDelta < oldDelta) {
+		  	elemScale += 0.1;
+		  }
 
 
+		  elem.style.transform = 'scale(' + elemScale + ')';
 
-		document.ondragstart = function() {
-		  return false;
-		}
-
-		function getCoords(elem) { // кроме IE8-
-		      var box = elem.getBoundingClientRect();
-		      return {
-		        top: box.top + pageYOffset,
-		        left: box.left + pageXOffset
-		      };
+		  e.preventDefault ? e.preventDefault() : (e.returnValue = false);
 		}
   </script>
 </body>
