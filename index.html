@@ -1,56 +1,72 @@
 <!DOCTYPE HTML>
 <html>
 <!-- 
-Обычно, до того как изображение загрузится (или при отключенных картинках), посетитель видит пустое место с текстом из «ALT». Но этот атрибут не допускает HTML-форматирования.
+Реализуйте более удобный плейсхолдер-подсказку на JavaScript через атрибут data-placeholder.
 
-При мобильном доступе скорость небольшая, и хочется, чтобы посетитель сразу видел красивый текст.
-
-Реализуйте «красивый» (HTML) аналог alt при помощи CSS/JavaScript, который затем будет заменён картинкой сразу же как только она загрузится. А если загрузка не состоится – то не заменён.
-
-p.s. Картинки для bing специально нет, так что текст остается «как есть».
+Правила работы плейсхолдера:
+- Элемент изначально содержит плейсхолдер. Специальный класс placeholder придает ему синий цвет.
+- При фокусировке плейсхолдер показывается уже над полем, становясь «подсказкой».
+- При снятии фокуса, подсказка убирается, если поле пустое – плейсхолдер возвращается в него.
  -->
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <style>
-    .img-replace {
-      float: left;
-      border: 1px solid black;
+    /* стиль для input с плейсхолдером */
+
+    .placeholder {
+      color: blue;
+      font-family: Georgia;
+    }
+    /* стиль для подсказки над элементом (вместо плейсхолдера при фокусировке) */
+
+    .placeholder-tooltip {
+      color: blue;
+      font-family: Georgia;
+      position: fixed;
     }
   </style>
 </head>
 
 <body>
 
-  <button onclick="window.location.reload(true)">Перезагрузить ифрейм</button>
-  <hr>
-  <div style="width:114px;height:40px;font-size:32px;letter-spacing:3px" data-src="https://js.cx/search/google.png" class="img-replace">
-    <span style="color:#1A53F7">G</span><span style="color:#E42131">o</span><span style="color:#FEB819">o</span><span style="color:#164AF2">g</span><span style="color:#00a315">l</span><span style="color:#E42131">e</span>
-  </div>
+  <p>Красивый placeholder:</p>
 
-  <div style="width:101px;height:40px;font-size:32px" data-src="https://js.cx/search/yandex.png" class="img-replace">
-    <span style="color:#F00">Я</span>ндекс
-  </div>
-
-  <div style="width:100;height:40px;font-size:32px;color:#006dd4;font-weight:bold;letter-spacing:3px;font-family:Arial" data-src="bing.png" class="img-replace">bing</div>
+  <input type="email" data-placeholder="E-mail">
 
 
   <script>
-    function replaceImg() {
-      var divs = document.querySelectorAll('div.img-replace');
-      for (var i = 0; i < divs.length; i++)(function(i) {
-        var img = document.createElement('img');
-        img.src = divs[i].getAttribute('data-src');
-        img.className = 'img-replace';
+    var input = document.querySelector('[data-placeholder]');
+    
+    showPlaceholder(input);
 
-        img.onload = function() {
-          divs[i].parentNode.replaceChild(img, divs[i]);
-        }
-
-      }(i))
+    // Показать placeholder внутри input
+    // Также можно сделать это при помощи вёрстки, отдельным элементом
+    function showPlaceholder(input) {
+      input.classList.add('placeholder');
+      input.value = input.dataset.placeholder;
     }
 
-    setTimeout(replaceImg, 1000); // задержка на 1 сек для демонстрации
+    var email = document.querySelector('input[type="email"]');
+    var placeholder = document.createElement('div');
+    email.onfocus = function() {
+      if (input.classList.contains('placeholder')) {
+        input.classList.remove('placeholder');
+        input.value = '';
+      }
+      placeholder.innerHTML = input.dataset.placeholder;
+      placeholder.classList.add('placeholder-tooltip');
+      placeholder.style.fontSize = getComputedStyle(input).fontSize;
+      placeholder.style.top = input.offsetTop - input.clientHeight + 'px';
+      input.parentNode.appendChild(placeholder);
+    }
+    email.onblur = function() {
+      input.parentNode.removeChild(placeholder);
+      if(!input.value) {
+        showPlaceholder(input);
+      }
+    }
   </script>
+
 
 </body>
 
