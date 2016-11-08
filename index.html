@@ -2,179 +2,125 @@
 <html>
 <!-- 
 
-Создайте функцию showPrompt(text, callback), которая выводит форму для ввода с сообщением text и кнопками ОК/Отмена.
+Напишите функцию validate(form), которая проверяет содержимое формы по клику на кнопку «Проверить».
 
-- При отправке формы (OK/ввод в текстовом поле) – должна вызываться функция callback со значением поля.
-- При нажатии на Отмена или на клавишу Esc – должна вызываться функция callback(null). Клавиша Esc должна закрывать форму всегда, даже если поле для ввода сообщения не в фокусе.
+Ошибки:
+1. Одно из полей не заполнено.
+2. Пароли не совпадают.
 
-Особенности реализации:
-- Форма должна показываться в центре окна (и оставаться в центре при изменении его размеров, а также при прокрутке окна!).
-- Текст может состоять из нескольких строк, возможен любой HTML
-- При показе формы остальные элементы страницы использовать нельзя, не работают другие кнопки и т.п, это окно – модальное.
-- При показе формы – сразу фокус на INPUT для ввода.
-- Нажатия Tab/Shift+Tab переключают в цикле только по полям формы, они не позволяют переключиться на другие элементы страницы.
+Ошибка должна сопровождаться сообщением у поля.
 
  -->
 <head>
   <meta charset="utf-8">
   <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
+    td select,
+    td input {
+      width: 150px;
     }
 
-    #prompt-form {
-      display: inline-block;
-      padding: 5px 5px 5px 70px;
-      width: 200px;
-      border: 1px solid black;
-      background: white url(https://js.cx/clipart/prompt.png) no-repeat left 5px;
-      vertical-align: middle;
-    }
-
-    #prompt-form-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 9999;
-      display: none;
-      width: 100%;
-      height: 100%;
-      text-align: center;
-    }
-
-    #prompt-form-container:before {
-      display: inline-block;
-      height: 100%;
-      content: '';
-      vertical-align: middle;
-    }
-
-    #cover-div {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 9000;
-      width: 100%;
-      height: 100%;
-      background-color: gray;
-      opacity: 0.3;
-    }
-
-    #prompt-form input[name="text"] {
+    label {
       display: block;
-      margin: 5px;
-      width: 180px;
+    }
+
+    .error input,
+    .error textarea {
+      border: 1px solid red;
+    }
+
+    .error {
+      color: red;
     }
   </style>
 </head>
 
-<body style="height:3000px">
-
-  <h1>Нажмите на кнопку ниже</h1>
-
-  <input type="button" value="Нажмите для показа формы ввода" id="show-button">
+<body>
 
 
-  <div id="prompt-form-container">
-    <form id="prompt-form">
-      <div id="prompt-message"></div>
-      <input name="text" type="text">
-      <input type="submit" value="Ок">
-      <input type="button" name="cancel" value="Отмена">
-    </form>
-  </div>
+  <form>
+    <table>
+      <tr>
+        <td>От кого</td>
+        <td>
+          <input name="from" type="text">
+        </td>
+      </tr>
+      <tr>
+        <td>Ваш пароль</td>
+        <td>
+          <input name="password" type="password">
+        </td>
+      </tr>
+      <tr>
+        <td>Повторите пароль</td>
+        <td>
+          <input name="password2" type="password">
+        </td>
+      </tr>
+      <tr>
+        <td>Куда</td>
+        <td>
+          <select name="to">
+            <option></option>
+            <option value="1">Отдел снабжения</option>
+            <option value="2">Отдел разработки</option>
+            <option value="3">Директору</option>
+          </select>
+        </td>
+      </tr>
+    </table>
+
+    Сообщение:
+    <label>
+      <textarea name="message" style="display:block;width:400px;height:80px"></textarea>
+    </label>
+
+    <input type="button" onclick="validate(this.form)" value="Проверить">
+  </form>
 
   <script>
-    // Показать полупрозрачный DIV, затеняющий всю страницу
-    // (а форма будет не в нем, а рядом с ним, чтобы не полупрозрачная)
-    function showCover() {
-      var coverDiv = document.createElement('div');
-      coverDiv.id = 'cover-div';
-      document.body.appendChild(coverDiv);
-      
-      //Эти три строчки от себя добавил :) (кроме ie8-)
-      var paddingRight = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = paddingRight + 'px';
+    function showError(container, errorMessage) {
+      container.className = 'error';
+      var msgElem = document.createElement('span');
+      msgElem.className = "error-message";
+      msgElem.innerHTML = errorMessage;
+      container.appendChild(msgElem);
     }
 
-    function hideCover() {
-      document.body.removeChild(document.getElementById('cover-div'));
-      
-      //А еще эти две строчки ) 
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
+    function resetError(container) {
+      container.className = '';
+      if (container.lastChild.className == "error-message") {
+        container.removeChild(container.lastChild);
+      }
     }
 
-    function showPrompt(text, callback) {
-      showCover();
-      var form = document.getElementById('prompt-form');
-      var container = document.getElementById('prompt-form-container');
-      document.getElementById('prompt-message').innerHTML = text;
-      form.elements.text.value = '';
+    function validate(form) {
+      var elems = form.elements;
 
-      function complete(value) {
-        hideCover();
-        container.style.display = 'none';
-        document.onkeydown = null;
-        callback(value);
+      resetError(elems.from.parentNode);
+      if (!elems.from.value) {
+        showError(elems.from.parentNode, ' Укажите от кого.');
       }
 
-      form.onsubmit = function() {
-        var value = form.elements.text.value;
-        if (value == '') return false; // игнорировать пустой submit
+      resetError(elems.password.parentNode);
+      if (!elems.password.value) {
+        showError(elems.password.parentNode, ' Укажите пароль.');
+      } else if (elems.password.value != elems.password2.value) {
+        showError(elems.password.parentNode, ' Пароли не совпадают.');
+      }
 
-        complete(value);
-        return false;
-      };
+      resetError(elems.to.parentNode);
+      if (!elems.to.value) {
+        showError(elems.to.parentNode, ' Укажите, куда.');
+      }
 
-      form.elements.cancel.onclick = function() {
-        complete(null);
-      };
+      resetError(elems.message.parentNode);
+      if (!elems.message.value) {
+        showError(elems.message.parentNode, ' Отсутствует текст.');
+      }
 
-      document.onkeydown = function(e) {
-        if (e.keyCode == 27) { // escape
-          complete(null);
-        }
-      };
-
-      var lastElem = form.elements[form.elements.length - 1];
-      var firstElem = form.elements[0];
-      
-      /*
-      Нажатия Tab/Shift+Tab должно переключать только по полям формы, 
-      они не позволяют переключиться на другие элементы страницы.
-      */
-      lastElem.onkeydown = function(e) {
-        if (e.keyCode == 9 && !e.shiftKey) { //сканкод 9 - "tab"
-          firstElem.focus();
-          return false;
-        }
-      };
-
-      firstElem.onkeydown = function(e) {
-        if (e.keyCode == 9 && e.shiftKey) {
-          lastElem.focus();
-          return false;
-        }
-      };
-
-
-      container.style.display = 'block';
-      form.elements.text.focus();
     }
-
-    document.getElementById('show-button').onclick = function() {
-      showPrompt("Введите что-нибудь<br>...умное :)", function(value) {
-        alert("Вы ввели: " + value);
-      });
-    };
   </script>
-
 
 
 </body>
