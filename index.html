@@ -1,318 +1,182 @@
 <!DOCTYPE html>
 <html>
 <!-- 
-Создайте интерфейс для автоматического вычисления процентов по вкладу.
 
-Ставка фиксирована: 12% годовых. При включённом поле «капитализация» – проценты приплюсовываются к сумме вклада каждый месяц (сложный процент).
+Создайте функцию showPrompt(text, callback), которая выводит форму для ввода с сообщением text и кнопками ОК/Отмена.
 
-Технические требования:
-- В поле с суммой должно быть нельзя ввести не-цифру. При этом пусть в нём работают специальные клавиши и сочетания Ctrl-X/Ctrl-V.
-- Изменения в форме отражаются в результатах сразу.
+- При отправке формы (OK/ввод в текстовом поле) – должна вызываться функция callback со значением поля.
+- При нажатии на Отмена или на клавишу Esc – должна вызываться функция callback(null). Клавиша Esc должна закрывать форму всегда, даже если поле для ввода сообщения не в фокусе.
+
+Особенности реализации:
+- Форма должна показываться в центре окна (и оставаться в центре при изменении его размеров, а также при прокрутке окна!).
+- Текст может состоять из нескольких строк, возможен любой HTML
+- При показе формы остальные элементы страницы использовать нельзя, не работают другие кнопки и т.п, это окно – модальное.
+- При показе формы – сразу фокус на INPUT для ввода.
+- Нажатия Tab/Shift+Tab переключают в цикле только по полям формы, они не позволяют переключиться на другие элементы страницы.
+
  -->
 <head>
-
-<!-- Мой говнокод!!! Нормальное решение снизу!!! -->
-
   <meta charset="utf-8">
   <style>
-    td select,
-    td input {
-      width: 150px;
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
     }
 
-    #diagram td {
-      vertical-align: bottom;
+    #prompt-form {
+      display: inline-block;
+      padding: 5px 5px 5px 70px;
+      width: 200px;
+      border: 1px solid black;
+      background: white url(https://js.cx/clipart/prompt.png) no-repeat left 5px;
+      vertical-align: middle;
+    }
+
+    #prompt-form-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+      display: none;
+      width: 100%;
+      height: 100%;
       text-align: center;
-      padding: 10px;
     }
 
-    #diagram div {
-      margin: auto;
+    #prompt-form-container:before {
+      display: inline-block;
+      height: 100%;
+      content: '';
+      vertical-align: middle;
+    }
+
+    #cover-div {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9000;
+      width: 100%;
+      height: 100%;
+      background-color: gray;
+      opacity: 0.3;
+    }
+
+    #prompt-form input[name="text"] {
+      display: block;
+      margin: 5px;
+      width: 180px;
     }
   </style>
 </head>
 
-<body>
+<body style="height:3000px">
 
-  <p>Мой вариант решения задачи. В целом свою задачу выполняет. Но! </p>
-  <ol>
-    <li>Если стереть все символы, получится хрень</li>
-    <li>Если после расчета поменять галочку, то результат должен измениться, но не у меня</li>
-    <li>Не игнорирует пробелы, etc...</li>
-  </ol>
-  <hr><br>
+  <h1>Нажмите на кнопку ниже</h1>
 
-  Калькулятор процентов, из расчёта 12% годовых.
-  <form name="calculator">
-    <table>
-      <tr>
-        <td>Сумма</td>
-        <td>
-          <input name="money" type="text" value="10000">
-        </td>
-      </tr>
-      <tr>
-        <td>Срок в месяцах</td>
-        <td>
-          <select name="months">
-            <option value="3">3 (минимум)</option>
-            <option value="6">6 (полгода)</option>
-            <option value="12" selected>12 (год)</option>
-            <option value="18">18 (1.5 года)</option>
-            <option value="24">24 (2 года)</option>
-            <option value="30">30 (2.5 года)</option>
-            <option value="36">36 (3 года)</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td>С капитализацией</td>
-        <td>
-          <input name="capitalization" type="checkbox">
-        </td>
-      </tr>
-    </table>
+  <input type="button" value="Нажмите для показа формы ввода" id="show-button">
 
 
-  </form>
-
-
-  <table id="diagram">
-    <tr>
-      <th>Было:</th>
-      <th>Станет:</th>
-    </tr>
-    <tr>
-      <th id="money-before"></th>
-      <th id="money-after"></th>
-    </tr>
-    <tr>
-      <td>
-        <div style="background: red;width:40px;height:100px"></div>
-      </td>
-      <td>
-        <div style="background: green;width:40px;height:0" id="height-after"></div>
-      </td>
-    </tr>
-  </table>
+  <div id="prompt-form-container">
+    <form id="prompt-form">
+      <div id="prompt-message"></div>
+      <input name="text" type="text">
+      <input type="submit" value="Ок">
+      <input type="button" name="cancel" value="Отмена">
+    </form>
+  </div>
 
   <script>
-    // вспомогательная функция для получения символа из события keypress
-    // (вдруг понадобится))
-    function getChar(event) {
-      if (event.which == null) {
-        if (event.keyCode < 32) return null;
-        return String.fromCharCode(event.keyCode) // IE
-      }
-
-      if (event.which != 0 && event.charCode != 0) {
-        if (event.which < 32) return null;
-        return String.fromCharCode(event.which) // остальные
-      }
-
-      return null; // специальная клавиша
+    // Показать полупрозрачный DIV, затеняющий всю страницу
+    // (а форма будет не в нем, а рядом с ним, чтобы не полупрозрачная)
+    function showCover() {
+      var coverDiv = document.createElement('div');
+      coverDiv.id = 'cover-div';
+      document.body.appendChild(coverDiv);
+      
+      //Эти три строчки от себя добавил :) (кроме ie8-)
+      var paddingRight = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = paddingRight + 'px';
     }
 
-    // ваш код...
-    var calculator = document.forms.calculator;
-    var money = document.forms.calculator.money;
-    var months = document.forms.calculator.months;
-    var capitalization = document.forms.calculator.capitalization;
-    var moneyBefore = document.getElementById('money-before');
-    var moneyAfter = document.getElementById('money-after');
-    var heightAfter = document.getElementById('height-after');
-    
-    calculator.onkeypress = function(event) {
-      if (event.ctrlKey || event.altKey || getChar(event) == null) return; // специальная клавиша
-      if(isNaN(getChar(event))) return false;
+    function hideCover() {
+      document.body.removeChild(document.getElementById('cover-div'));
+      
+      //А еще эти две строчки ) 
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
-      this.oninput = function(event) {
-        moneyBefore.innerHTML = money.value;
-        if(capitalization.checked == false) {
-          var value = countMoney(money.value, months.value);
-          moneyAfter.innerHTML = value;
-          heightAfter.style.height = (value * 100 / money.value) + 'px';
+
+    function showPrompt(text, callback) {
+      showCover();
+      var form = document.getElementById('prompt-form');
+      var container = document.getElementById('prompt-form-container');
+      document.getElementById('prompt-message').innerHTML = text;
+      form.elements.text.value = '';
+
+      function complete(value) {
+        hideCover();
+        container.style.display = 'none';
+        document.onkeydown = null;
+        callback(value);
+      }
+
+      form.onsubmit = function() {
+        var value = form.elements.text.value;
+        if (value == '') return false; // игнорировать пустой submit
+
+        complete(value);
+        return false;
+      };
+
+      form.elements.cancel.onclick = function() {
+        complete(null);
+      };
+
+      document.onkeydown = function(e) {
+        if (e.keyCode == 27) { // escape
+          complete(null);
         }
-        else if(capitalization.checked == true) {
-          var value = countMoneyCapital(money.value, months.value);
-          moneyAfter.innerHTML = value;
-          heightAfter.style.height = (value * 100 / money.value) + 'px';
+      };
+
+      var lastElem = form.elements[form.elements.length - 1];
+      var firstElem = form.elements[0];
+      
+      /*
+      Нажатия Tab/Shift+Tab должно переключать только по полям формы, 
+      они не позволяют переключиться на другие элементы страницы.
+      */
+      lastElem.onkeydown = function(e) {
+        if (e.keyCode == 9 && !e.shiftKey) { //сканкод 9 - "tab"
+          firstElem.focus();
+          return false;
         }
-      }
-    
-    
-    function countMoney(money, months) {
-      var value = +money +(money * 0.12 * months / 12);
-      return Math.round(value);
+      };
+
+      firstElem.onkeydown = function(e) {
+        if (e.keyCode == 9 && e.shiftKey) {
+          lastElem.focus();
+          return false;
+        }
+      };
+
+
+      container.style.display = 'block';
+      form.elements.text.focus();
     }
-    
-    function countMoneyCapital(money, months) {
-      var value = +money;
-      for(var i = 0; i < months; i++) {
-        value = value * ( 1 + 0.12/12);
-      }
-      return Math.round(value);
-    }
+
+    document.getElementById('show-button').onclick = function() {
+      showPrompt("Введите что-нибудь<br>...умное :)", function(value) {
+        alert("Вы ввели: " + value);
+      });
+    };
   </script>
+
 
 
 </body>
 
 </html>
-
-
-<!-- 
-<!DOCTYPE html>
-<html>
-
-<head>
-  <meta charset="utf-8">
-  <style>
-    td select,
-    td input {
-      width: 150px;
-    }
-
-    #diagram td {
-      vertical-align: bottom;
-      text-align: center;
-      padding: 10px;
-    }
-
-    #diagram div {
-      margin: auto;
-    }
-  </style>
-</head>
-
-<body>
-
-
-  Калькулятор процентов, из расчёта 12% годовых.
-  <form name="calculator">
-    <table>
-      <tr>
-        <td>Сумма</td>
-        <td>
-          <input name="money" type="text" value="10000">
-        </td>
-      </tr>
-      <tr>
-        <td>Срок в месяцах</td>
-        <td>
-          <select name="months">
-            <option value="3">3 (минимум)</option>
-            <option value="6">6 (полгода)</option>
-            <option value="12" selected>12 (год)</option>
-            <option value="18">18 (1.5 года)</option>
-            <option value="24">24 (2 года)</option>
-            <option value="30">30 (2.5 года)</option>
-            <option value="36">36 (3 года)</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td>С капитализацией</td>
-        <td>
-          <input name="capitalization" type="checkbox">
-        </td>
-      </tr>
-    </table>
-
-
-  </form>
-
-
-  <table id="diagram">
-    <tr>
-      <th>Было:</th>
-      <th>Станет:</th>
-    </tr>
-    <tr>
-      <th id="money-before"></th>
-      <th id="money-after"></th>
-    </tr>
-    <td>
-      <div style="background: red;width:40px;height:100px"></div>
-    </td>
-    <td>
-      <div style="background: green;width:40px;height:0" id="height-after"></div>
-    </td>
-  </table>
-
-  <script>
-    // event.type должен быть keypress
-    function getChar(event) {
-      if (event.which == null) {
-        if (event.keyCode < 32) return null;
-        return String.fromCharCode(event.keyCode) // IE
-      }
-
-      if (event.which != 0 && event.charCode != 0) {
-        if (event.which < 32) return null;
-        return String.fromCharCode(event.which) // остальные
-      }
-
-      return null; // специальная клавиша
-    }
-
-    var form = document.forms.calculator;
-
-
-    var moneyElem = form.elements.money;
-    moneyElem.onkeypress = function(e) {
-      e = e || event;
-      var chr = getChar(e);
-
-      if (e.ctrlKey || e.altKey || chr == null) return; // специальная клавиша
-      if (chr < '0' || chr > '9') return false;
-    }
-
-    // клавиатура, вставить/вырезать клавиатурой
-    moneyElem.onkeyup = calculate;
-
-    // любые действия, кроме IE. В IE9 также работает, кроме удаления
-    moneyElem.oninput = calculate;
-
-    moneyElem.onpropertychange = function() { // для IE8- изменение значения, кроме удаления
-      event.propertyName == "value" && calculate();
-    }
-
-    var capitalizationElem = form.elements.capitalization;
-    capitalizationElem.onclick = calculate;
-
-    var monthsElem = form.elements.months;
-    monthsElem.onchange = calculate;
-
-
-    function calculate() {
-      var sum = +moneyElem.value;
-      if (!sum) return;
-
-      var monthlyIncrease = 0.01;
-
-      if (!capitalizationElem.checked) {
-        sum = sum * (1 + monthlyIncrease * monthsElem.value);
-      } else {
-
-        for (var i = 0; i < monthsElem.value; i++) {
-          // 1000 1010 1020.1
-          sum = sum * (1 + monthlyIncrease);
-        }
-      }
-      sum = Math.round(sum);
-
-      var height = sum / moneyElem.value * 100 + 'px';
-      document.getElementById('height-after').style.height = height;
-      document.getElementById('money-before').innerHTML = moneyElem.value;
-      document.getElementById('money-after').innerHTML = sum;
-    }
-
-    calculate();
-  </script>
-
-
-</body>
-
-</html>
- -->
