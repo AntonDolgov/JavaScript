@@ -1,69 +1,157 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
 <!-- 
-Реализуйте более удобный плейсхолдер-подсказку на JavaScript через атрибут data-placeholder.
+Создайте интерфейс для автоматического вычисления процентов по вкладу.
 
-Правила работы плейсхолдера:
-- Элемент изначально содержит плейсхолдер. Специальный класс placeholder придает ему синий цвет.
-- При фокусировке плейсхолдер показывается уже над полем, становясь «подсказкой».
-- При снятии фокуса, подсказка убирается, если поле пустое – плейсхолдер возвращается в него.
+Ставка фиксирована: 12% годовых. При включённом поле «капитализация» – проценты приплюсовываются к сумме вклада каждый месяц (сложный процент).
+
+Технические требования:
+- В поле с суммой должно быть нельзя ввести не-цифру. При этом пусть в нём работают специальные клавиши и сочетания Ctrl-X/Ctrl-V.
+- Изменения в форме отражаются в результатах сразу.
  -->
 <head>
-  <meta charset="UTF-8">
+
+<!-- Мой говнокод!!! Нормальное решение снизу!!! -->
+
+  <meta charset="utf-8">
   <style>
-    /* стиль для input с плейсхолдером */
-
-    .placeholder {
-      color: blue;
-      font-family: Georgia;
+    td select,
+    td input {
+      width: 150px;
     }
-    /* стиль для подсказки над элементом (вместо плейсхолдера при фокусировке) */
 
-    .placeholder-tooltip {
-      color: blue;
-      font-family: Georgia;
-      position: fixed;
+    #diagram td {
+      vertical-align: bottom;
+      text-align: center;
+      padding: 10px;
+    }
+
+    #diagram div {
+      margin: auto;
     }
   </style>
 </head>
 
 <body>
 
-  <p>Красивый placeholder:</p>
+  <p>Мой вариант решения задачи. В целом свою задачу выполняет. Но! </p>
+  <ol>
+    <li>Если стереть все символы, получится хрень</li>
+    <li>Если после расчета поменять галочку, то результат должен измениться, но не у меня</li>
+    <li>Не игнорирует пробелы, etc...</li>
+  </ol>
+  <hr><br>
 
-  <input type="email" data-placeholder="E-mail">
+  Калькулятор процентов, из расчёта 12% годовых.
+  <form name="calculator">
+    <table>
+      <tr>
+        <td>Сумма</td>
+        <td>
+          <input name="money" type="text" value="10000">
+        </td>
+      </tr>
+      <tr>
+        <td>Срок в месяцах</td>
+        <td>
+          <select name="months">
+            <option value="3">3 (минимум)</option>
+            <option value="6">6 (полгода)</option>
+            <option value="12" selected>12 (год)</option>
+            <option value="18">18 (1.5 года)</option>
+            <option value="24">24 (2 года)</option>
+            <option value="30">30 (2.5 года)</option>
+            <option value="36">36 (3 года)</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>С капитализацией</td>
+        <td>
+          <input name="capitalization" type="checkbox">
+        </td>
+      </tr>
+    </table>
 
+
+  </form>
+
+
+  <table id="diagram">
+    <tr>
+      <th>Было:</th>
+      <th>Станет:</th>
+    </tr>
+    <tr>
+      <th id="money-before"></th>
+      <th id="money-after"></th>
+    </tr>
+    <tr>
+      <td>
+        <div style="background: red;width:40px;height:100px"></div>
+      </td>
+      <td>
+        <div style="background: green;width:40px;height:0" id="height-after"></div>
+      </td>
+    </tr>
+  </table>
 
   <script>
-    var input = document.querySelector('[data-placeholder]');
+    // вспомогательная функция для получения символа из события keypress
+    // (вдруг понадобится))
+    function getChar(event) {
+      if (event.which == null) {
+        if (event.keyCode < 32) return null;
+        return String.fromCharCode(event.keyCode) // IE
+      }
+
+      if (event.which != 0 && event.charCode != 0) {
+        if (event.which < 32) return null;
+        return String.fromCharCode(event.which) // остальные
+      }
+
+      return null; // специальная клавиша
+    }
+
+    // ваш код...
+    var calculator = document.forms.calculator;
+    var money = document.forms.calculator.money;
+    var months = document.forms.calculator.months;
+    var capitalization = document.forms.calculator.capitalization;
+    var moneyBefore = document.getElementById('money-before');
+    var moneyAfter = document.getElementById('money-after');
+    var heightAfter = document.getElementById('height-after');
     
-    showPlaceholder(input);
-
-    // Показать placeholder внутри input
-    // Также можно сделать это при помощи вёрстки, отдельным элементом
-    function showPlaceholder(input) {
-      input.classList.add('placeholder');
-      input.value = input.dataset.placeholder;
+    calculator.onkeypress = function(event) {
+      if (event.ctrlKey || event.altKey || getChar(event) == null) return; // специальная клавиша
+      if(isNaN(getChar(event))) return false;
     }
-
-    var email = document.querySelector('input[type="email"]');
-    var placeholder = document.createElement('div');
-    email.onfocus = function() {
-      if (input.classList.contains('placeholder')) {
-        input.classList.remove('placeholder');
-        input.value = '';
+      this.oninput = function(event) {
+        moneyBefore.innerHTML = money.value;
+        if(capitalization.checked == false) {
+          var value = countMoney(money.value, months.value);
+          moneyAfter.innerHTML = value;
+          heightAfter.style.height = (value * 100 / money.value) + 'px';
+        }
+        else if(capitalization.checked == true) {
+          var value = countMoneyCapital(money.value, months.value);
+          moneyAfter.innerHTML = value;
+          heightAfter.style.height = (value * 100 / money.value) + 'px';
+        }
       }
-      placeholder.innerHTML = input.dataset.placeholder;
-      placeholder.classList.add('placeholder-tooltip');
-      placeholder.style.fontSize = getComputedStyle(input).fontSize;
-      placeholder.style.top = input.offsetTop - input.clientHeight + 'px';
-      input.parentNode.appendChild(placeholder);
+    
+    
+    function countMoney(money, months) {
+      var value = +money +(money * 0.12 * months / 12);
+      return Math.round(value);
     }
-    email.onblur = function() {
-      input.parentNode.removeChild(placeholder);
-      if(!input.value) {
-        showPlaceholder(input);
+    
+    function countMoneyCapital(money, months) {
+      var value = +money;
+      for(var i = 0; i < months; i++) {
+        value = value * ( 1 + 0.12/12);
       }
+      return Math.round(value);
     }
   </script>
 
@@ -71,3 +159,160 @@
 </body>
 
 </html>
+
+
+<!-- 
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    td select,
+    td input {
+      width: 150px;
+    }
+
+    #diagram td {
+      vertical-align: bottom;
+      text-align: center;
+      padding: 10px;
+    }
+
+    #diagram div {
+      margin: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+
+  Калькулятор процентов, из расчёта 12% годовых.
+  <form name="calculator">
+    <table>
+      <tr>
+        <td>Сумма</td>
+        <td>
+          <input name="money" type="text" value="10000">
+        </td>
+      </tr>
+      <tr>
+        <td>Срок в месяцах</td>
+        <td>
+          <select name="months">
+            <option value="3">3 (минимум)</option>
+            <option value="6">6 (полгода)</option>
+            <option value="12" selected>12 (год)</option>
+            <option value="18">18 (1.5 года)</option>
+            <option value="24">24 (2 года)</option>
+            <option value="30">30 (2.5 года)</option>
+            <option value="36">36 (3 года)</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>С капитализацией</td>
+        <td>
+          <input name="capitalization" type="checkbox">
+        </td>
+      </tr>
+    </table>
+
+
+  </form>
+
+
+  <table id="diagram">
+    <tr>
+      <th>Было:</th>
+      <th>Станет:</th>
+    </tr>
+    <tr>
+      <th id="money-before"></th>
+      <th id="money-after"></th>
+    </tr>
+    <td>
+      <div style="background: red;width:40px;height:100px"></div>
+    </td>
+    <td>
+      <div style="background: green;width:40px;height:0" id="height-after"></div>
+    </td>
+  </table>
+
+  <script>
+    // event.type должен быть keypress
+    function getChar(event) {
+      if (event.which == null) {
+        if (event.keyCode < 32) return null;
+        return String.fromCharCode(event.keyCode) // IE
+      }
+
+      if (event.which != 0 && event.charCode != 0) {
+        if (event.which < 32) return null;
+        return String.fromCharCode(event.which) // остальные
+      }
+
+      return null; // специальная клавиша
+    }
+
+    var form = document.forms.calculator;
+
+
+    var moneyElem = form.elements.money;
+    moneyElem.onkeypress = function(e) {
+      e = e || event;
+      var chr = getChar(e);
+
+      if (e.ctrlKey || e.altKey || chr == null) return; // специальная клавиша
+      if (chr < '0' || chr > '9') return false;
+    }
+
+    // клавиатура, вставить/вырезать клавиатурой
+    moneyElem.onkeyup = calculate;
+
+    // любые действия, кроме IE. В IE9 также работает, кроме удаления
+    moneyElem.oninput = calculate;
+
+    moneyElem.onpropertychange = function() { // для IE8- изменение значения, кроме удаления
+      event.propertyName == "value" && calculate();
+    }
+
+    var capitalizationElem = form.elements.capitalization;
+    capitalizationElem.onclick = calculate;
+
+    var monthsElem = form.elements.months;
+    monthsElem.onchange = calculate;
+
+
+    function calculate() {
+      var sum = +moneyElem.value;
+      if (!sum) return;
+
+      var monthlyIncrease = 0.01;
+
+      if (!capitalizationElem.checked) {
+        sum = sum * (1 + monthlyIncrease * monthsElem.value);
+      } else {
+
+        for (var i = 0; i < monthsElem.value; i++) {
+          // 1000 1010 1020.1
+          sum = sum * (1 + monthlyIncrease);
+        }
+      }
+      sum = Math.round(sum);
+
+      var height = sum / moneyElem.value * 100 + 'px';
+      document.getElementById('height-after').style.height = height;
+      document.getElementById('money-before').innerHTML = moneyElem.value;
+      document.getElementById('money-after').innerHTML = sum;
+    }
+
+    calculate();
+  </script>
+
+
+</body>
+
+</html>
+ -->
