@@ -1,107 +1,83 @@
 <!DOCTYPE html>
 <html>
-<!-- Перепишите слайдер в виде компонента -->
+<!-- 
+
+Напишите функцию-конструктор new Voter(options) для голосовалки. 
+
+По клику на + и — число должно увеличиваться или уменьшаться.
+Публичный метод voter.setVote(vote) должен устанавливать текущее число – значение голоса.
+Все остальные методы и свойства пусть будут приватными.
+
+ -->
 <head>
   <meta charset="utf-8">
   <script src="https://cdn.polyfill.io/v1/polyfill.js?features=Element.prototype.closest"></script>
-
   <style>
-    .slider {
-      margin: 5px;
-      width: 310px;
-      height: 15px;
-      border-radius: 5px;
-      background: #E0E0E0;
-      background: -moz-linear-gradient(left top, #E0E0E0, #EEEEEE) repeat scroll 0 0 transparent;
-      background: -webkit-gradient(linear, left top, right bottom, from(#E0E0E0), to(#EEEEEE));
-      background: linear-gradient(left top, #E0E0E0, #EEEEEE);
+    .voter {
+      font-family: Consolas, "Lucida Console", monospace;
+      font-size: 18px;
     }
 
-    .thumb {
-      position: relative;
-      top: -5px;
-      left: 10px;
-      width: 10px;
-      height: 25px;
-      border-radius: 3px;
-      background: blue;
+    .up,
+    .down {
       cursor: pointer;
+      color: blue;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
-  <div id="slider" class="slider">
-    <div class="thumb"></div>
+
+  <div id="voter" class="voter">
+    <span class="down">—</span>
+    <span class="vote">0</span>
+    <span class="up">+</span>
   </div>
+
   <script>
-    var slider = new Slider({
-      elem: document.getElementById('slider')
+    function Voter(options) {
+      var elem = options.elem;
+      var vote = elem.querySelector('.vote');
+      var value = vote.innerHTML;
+      
+      elem.onclick = function(event) {
+        if(event.target.closest('.down')) {
+          decrement();
+        } else if (event.target.closest('.up')) {
+          increment();
+        }
+      }
+      
+      elem.onmousedown = function() {
+        return false;
+      }
+      
+      // ----------- методы -------------
+      
+      this.setVote = function(number) {
+        if(isNaN(+number)) return false;
+        value = number;
+        vote.innerHTML = number;
+      }
+      
+      function increment() {
+        value ++;
+        vote.innerHTML = value;
+      }
+      function decrement() {
+        value --;
+        vote.innerHTML = value;
+      }
+    }
+
+    var voter = new Voter({
+      elem: document.getElementById('voter')
     });
 
-    function Slider(options) {
-      var elem = options.elem;
-      var thumbElem = elem.querySelector('.thumb');
-
-      var sliderCoords, thumbCoords, shiftX, shiftY;
-
-      elem.ondragstart = function() {
-        return false;
-      };
-
-      elem.onmousedown = function(event) {
-        if (event.target.closest('.thumb')) {
-          startDrag(event.clientX, event.clientY);
-          return false; // disable selection start (cursor change)
-        }
-      }
-
-      function startDrag(startClientX, startClientY) {
-        thumbCoords = thumbElem.getBoundingClientRect();
-        shiftX = startClientX - thumbCoords.left;
-        shiftY = startClientY - thumbCoords.top;
-
-        sliderCoords = elem.getBoundingClientRect();
-
-        document.addEventListener('mousemove', onDocumentMouseMove);
-        document.addEventListener('mouseup', onDocumentMouseUp);
-      }
-
-
-
-      function moveTo(clientX) {
-        // вычесть координату родителя, т.к. position: relative
-        var newLeft = clientX - shiftX - sliderCoords.left;
-
-        // курсор ушёл вне слайдера
-        if (newLeft < 0) {
-          newLeft = 0;
-        }
-        var rightEdge = elem.offsetWidth - thumbElem.offsetWidth;
-        if (newLeft > rightEdge) {
-          newLeft = rightEdge;
-        }
-
-        thumbElem.style.left = newLeft + 'px';
-      }
-
-
-      function onDocumentMouseMove(e) {
-        moveTo(e.clientX);
-      }
-
-      function onDocumentMouseUp() {
-        endDrag();
-      }
-
-
-      function endDrag() {
-        document.removeEventListener('mousemove', onDocumentMouseMove);
-        document.removeEventListener('mouseup', onDocumentMouseUp);
-      }
-
-    }
+    voter.setVote(1);
   </script>
+
 </body>
 
 </html>
